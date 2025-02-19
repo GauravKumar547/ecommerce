@@ -9,7 +9,7 @@ public interface CategoryController {
     public CategoryDTO getCategoryById(long id);
     public List<CategoryDTO> getAllCategories();
     public CategoryDTO createCategory(CategoryDTO categoryDTO);
-    public CategoryDTO updateCategory(CategoryDTO categoryDTO);
+    public CategoryDTO updateCategory(long id, CategoryDTO categoryDTO);
     public ResponsDTO deleteCategory(long id);
-    public CategoryDTO updateCategoryFields(CategoryDTO categoryDTO);
+    public CategoryDTO updateCategoryFields(long id, CategoryDTO categoryDTO);
 }

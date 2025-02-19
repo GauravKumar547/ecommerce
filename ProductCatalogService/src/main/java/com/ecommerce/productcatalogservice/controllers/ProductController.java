@@ -7,9 +7,9 @@ import java.util.List;
 
 public interface ProductController {
     public ProductDTO addProduct(ProductDTO product);
-    public ResponsDTO deleteProduct(ProductDTO product);
-    public ProductDTO updateProduct(ProductDTO product);
+    public ResponsDTO deleteProduct(long id);
+    public ProductDTO updateProduct(long id, ProductDTO product);
     public ProductDTO getProduct(long id);
-    public List<ProductDTO> getProductsByCategory(String category);
-    public ProductDTO updateProductFields(ProductDTO product);
+    public List<ProductDTO> getProductsByCategory(long categoryID);
+    public ProductDTO updateProductFields(long id, ProductDTO product);
 }

@@ -3,6 +3,6 @@ package com.ecommerce.productcatalogservice.dtos;
 import lombok.Data;
 
 @Data
-public class ResponsDTO {
+public class ResponseDTO {
     private String message;
 }

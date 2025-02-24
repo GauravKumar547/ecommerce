@@ -2,7 +2,7 @@ package com.ecommerce.productcatalogservice.controllers.impl;
 
 import com.ecommerce.productcatalogservice.controllers.CategoryController;
 import com.ecommerce.productcatalogservice.dtos.CategoryDTO;
-import com.ecommerce.productcatalogservice.dtos.ResponsDTO;
+import com.ecommerce.productcatalogservice.dtos.ResponseDTO;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -30,7 +30,7 @@ public class CategoryControllerImpl implements CategoryController {
     }
 
     @Override
-    public ResponsDTO deleteCategory(long id) {
+    public ResponseDTO deleteCategory(long id) {
         return null;
     }
 

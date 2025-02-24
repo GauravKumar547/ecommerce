@@ -1,15 +1,16 @@
 package com.ecommerce.productcatalogservice.controllers;
 
 import com.ecommerce.productcatalogservice.dtos.ProductDTO;
-import com.ecommerce.productcatalogservice.dtos.ResponsDTO;
+import com.ecommerce.productcatalogservice.dtos.ResponseDTO;
 
 import java.util.List;
 
 public interface ProductController {
     public ProductDTO addProduct(ProductDTO product);
-    public ResponsDTO deleteProduct(long id);
-    public ProductDTO updateProduct(long id, ProductDTO product);
+    public ResponseDTO deleteProduct(long id);
+    public ProductDTO replaceProduct(long id, ProductDTO product);
     public ProductDTO getProduct(long id);
+    public List<ProductDTO> getAllProducts();
     public List<ProductDTO> getProductsByCategory(long categoryID);
-    public ProductDTO updateProductFields(long id, ProductDTO product);
+    public ProductDTO updateProduct(long id, ProductDTO product);
 }

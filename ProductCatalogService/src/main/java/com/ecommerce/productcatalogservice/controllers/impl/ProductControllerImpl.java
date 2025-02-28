@@ -11,31 +11,41 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
+@RequestMapping("/products")
 public class ProductControllerImpl implements ProductController {
     private final IProductService productService;
 
+    @Autowired
     public ProductControllerImpl(IProductService productService) {
         this.productService = productService;
     }
 
 
     @Override
-    @PostMapping("/products/")
+    @PostMapping
     public ProductDTO addProduct(@RequestBody ProductDTO product) {
-        return null;
+        Product productResponse = productService.createProduct(ProductMapper.toProduct(product));
+        return ProductMapper.toProductDTO(productResponse);
     }
 
     @Override
-    @DeleteMapping("/products/{id}")
+    @DeleteMapping("/{id}")
     public ResponseDTO deleteProduct(@PathVariable long id) {
-        return null;
+        ResponseDTO responseDTO = new ResponseDTO();
+        if(productService.deleteProductByID(id)){
+            responseDTO.setMessage("Delete product successful");
+
+        }else{
+            responseDTO.setMessage("Delete product failed");
+        }
+        return responseDTO;
     }
 
     @Override
-    @PutMapping("/products/{id}")
+    @PutMapping("/{id}")
     public ProductDTO replaceProduct(@PathVariable long id, @RequestBody ProductDTO product) {
         Product productResponse = productService.replaceProductByID(id,ProductMapper.toProduct(product));
 
@@ -43,7 +53,7 @@ public class ProductControllerImpl implements ProductController {
     }
 
     @Override
-    @GetMapping("/products/{id}")
+    @GetMapping("/{id}")
     public ProductDTO getProduct(@PathVariable long id) {
         Product product = productService.getProductByID(id);
         if (product == null) {
@@ -53,7 +63,7 @@ public class ProductControllerImpl implements ProductController {
     }
 
     @Override
-    @GetMapping("/products")
+    @GetMapping
     public List<ProductDTO> getAllProducts() {
         List<Product> products = productService.getAllProducts();
         if (products.isEmpty()) {
@@ -67,14 +77,30 @@ public class ProductControllerImpl implements ProductController {
     }
 
     @Override
-    @GetMapping("/products/category/{categoryId}")
-    public List<ProductDTO> getProductsByCategory(@PathVariable long categoryId) {
-        return List.of();
+    @GetMapping("category/{categoryName}")
+    public List<ProductDTO> getProductsByCategory(@PathVariable String categoryName) {
+        return productService.getAllProducts().stream().filter(product->product.getCategory().getName().equals(categoryName)).map(ProductMapper::toProductDTO).collect(Collectors.toList());
     }
 
     @Override
-    @PatchMapping("/products/{id}")
+    @PatchMapping("/{id}")
     public ProductDTO updateProduct(@PathVariable long id, @RequestBody ProductDTO product) {
-        return null;
+        Product product1 = productService.getProductByID(id);
+        if (product1 == null) {
+            return null;
+        }
+        if(product.getName()!=null) {
+            product1.setName(product.getName());
+        }
+        if(product.getPrice()>0) {
+            product1.setPrice(product.getPrice());
+        }
+        if(product.getDescription()!=null) {
+            product1.setDescription(product.getDescription());
+        }
+        if(product.getImageUrl()!=null) {
+            product1.setImageUrl(product.getImageUrl());
+        }
+        return ProductMapper.toProductDTO(productService.replaceProductByID(id, product1));
     }
 }

@@ -69,4 +69,19 @@ public class FakeStoreProductService implements IProductService {
         }
         return null;
     }
+
+    @Override
+    public Boolean deleteProductByID(long productId) {
+        ResponseEntity<Void> deleteResponse = this.requestForEntity ("https://fakestoreapi.com/products/{id}", HttpMethod.DELETE,null,Void.class, productId);
+        return deleteResponse.getStatusCode().equals(HttpStatus.OK);
+    }
+
+    @Override
+    public Product createProduct(Product product) {
+        ResponseEntity<FakeStoreProductDTO> newProduct =  this.requestForEntity("https://fakestoreapi.com/products",HttpMethod.POST,ProductMapper.toFakeStoreDTO(product),FakeStoreProductDTO.class);
+        if(newProduct.getBody()!=null && newProduct.getStatusCode().equals(HttpStatus.OK)) {
+            return ProductMapper.toProduct(newProduct.getBody());
+        }
+        return null;
+    }
 }

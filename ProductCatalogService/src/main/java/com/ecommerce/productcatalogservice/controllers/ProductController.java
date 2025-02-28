@@ -11,6 +11,6 @@ public interface ProductController {
     public ProductDTO replaceProduct(long id, ProductDTO product);
     public ProductDTO getProduct(long id);
     public List<ProductDTO> getAllProducts();
-    public List<ProductDTO> getProductsByCategory(long categoryID);
+    public List<ProductDTO> getProductsByCategory(String categoryName);
     public ProductDTO updateProduct(long id, ProductDTO product);
 }

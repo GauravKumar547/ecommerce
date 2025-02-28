@@ -3,9 +3,11 @@ package com.ecommerce.productcatalogservice.mappers;
 import com.ecommerce.productcatalogservice.dtos.FakeStoreProductDTO;
 import com.ecommerce.productcatalogservice.dtos.ProductDTO;
 import com.ecommerce.productcatalogservice.models.Category;
+import com.ecommerce.productcatalogservice.models.Image;
 import com.ecommerce.productcatalogservice.models.Product;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ProductMapper {
     static public ProductDTO toProductDTO(Product product) {
@@ -14,7 +16,7 @@ public class ProductMapper {
         productDTO.setCategory(CategoryMapper.toCategoryDTO(product.getCategory()));
         productDTO.setName(product.getName());
         productDTO.setPrice(product.getPrice());
-        productDTO.setImageUrl(product.getImageUrl());
+        productDTO.setImages(product.getImages().stream().map(ImageMapper::toImageDTO).collect(Collectors.toList()));
         productDTO.setDescription(product.getDescription());
 
         return productDTO;
@@ -24,7 +26,7 @@ public class ProductMapper {
                 .id(productDTO.getId())
                 .name(productDTO.getName())
                 .price(productDTO.getPrice())
-                .imageUrl(productDTO.getImageUrl())
+                .images(productDTO.getImages().stream().map(ImageMapper::toImage).collect(Collectors.toList()))
                 .description(productDTO.getDescription())
                 .category(CategoryMapper.toCategory(productDTO.getCategory()))
                 .build();
@@ -34,7 +36,7 @@ public class ProductMapper {
                 .id(productDTO.getId())
                 .name(productDTO.getTitle())
                 .price(productDTO.getPrice())
-                .imageUrl(productDTO.getImage())
+                .images(List.of(Image.builder().url(productDTO.getImage()).build()))
                 .description(productDTO.getDescription())
                 .category(Category.builder().id(0).name(productDTO.getCategory()).build())
                 .build();
@@ -43,7 +45,7 @@ public class ProductMapper {
         return FakeStoreProductDTO.builder()
                 .id(product.getId())
                 .title(product.getName())
-                .image(product.getImageUrl())
+                .image(product.getImages().getFirst().getUrl())
                 .price(product.getPrice())
                 .description(product.getDescription())
                 .category(product.getCategory().getName())

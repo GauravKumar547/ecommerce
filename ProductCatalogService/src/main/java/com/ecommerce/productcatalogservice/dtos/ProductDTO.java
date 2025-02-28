@@ -10,6 +10,6 @@ public class ProductDTO {
     private String name;
     private String description;
     private double price;
-    private String imageUrl;
+    private List<ImageDTO> images;
     private CategoryDTO category;
 }

@@ -3,7 +3,9 @@ package com.ecommerce.productcatalogservice.controllers.impl;
 import com.ecommerce.productcatalogservice.controllers.ProductController;
 import com.ecommerce.productcatalogservice.dtos.ProductDTO;
 import com.ecommerce.productcatalogservice.dtos.ResponseDTO;
+import com.ecommerce.productcatalogservice.mappers.ImageMapper;
 import com.ecommerce.productcatalogservice.mappers.ProductMapper;
+import com.ecommerce.productcatalogservice.models.Image;
 import com.ecommerce.productcatalogservice.models.Product;
 import com.ecommerce.productcatalogservice.services.IProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,8 +100,8 @@ public class ProductControllerImpl implements ProductController {
         if(product.getDescription()!=null) {
             product1.setDescription(product.getDescription());
         }
-        if(product.getImageUrl()!=null) {
-            product1.setImageUrl(product.getImageUrl());
+        if(!product.getImages().isEmpty()) {
+            product1.setImages(product.getImages().stream().map(img->ImageMapper.toImage(img)).collect(Collectors.toList()));
         }
         return ProductMapper.toProductDTO(productService.replaceProductByID(id, product1));
     }

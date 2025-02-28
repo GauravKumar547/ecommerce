@@ -5,6 +5,9 @@ import com.ecommerce.productcatalogservice.models.Category;
 
 public class CategoryMapper {
     static public CategoryDTO toCategoryDTO(Category category) {
+        if(category == null){
+            return null;
+        }
         CategoryDTO categoryDTO = new CategoryDTO();
         categoryDTO.setId(category.getId());
         categoryDTO.setName(category.getName());
@@ -13,10 +16,10 @@ public class CategoryMapper {
     }
 
     static public Category toCategory(CategoryDTO categoryDTO) {
-        return Category.builder()
+        return categoryDTO!=null? Category.builder()
                 .id(categoryDTO.getId())
                 .name(categoryDTO.getName())
                 .description(categoryDTO.getDescription())
-                .build();
+                .build():null;
     }
 }

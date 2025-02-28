@@ -14,7 +14,7 @@ public class ProductMapper {
         productDTO.setCategory(CategoryMapper.toCategoryDTO(product.getCategory()));
         productDTO.setName(product.getName());
         productDTO.setPrice(product.getPrice());
-        productDTO.setImages(product.getImages());
+        productDTO.setImageUrl(product.getImageUrl());
         productDTO.setDescription(product.getDescription());
 
         return productDTO;
@@ -24,7 +24,7 @@ public class ProductMapper {
                 .id(productDTO.getId())
                 .name(productDTO.getName())
                 .price(productDTO.getPrice())
-                .images(productDTO.getImages())
+                .imageUrl(productDTO.getImageUrl())
                 .description(productDTO.getDescription())
                 .category(CategoryMapper.toCategory(productDTO.getCategory()))
                 .build();
@@ -34,7 +34,7 @@ public class ProductMapper {
                 .id(productDTO.getId())
                 .name(productDTO.getTitle())
                 .price(productDTO.getPrice())
-                .images(List.of(productDTO.getImage()))
+                .imageUrl(productDTO.getImage())
                 .description(productDTO.getDescription())
                 .category(Category.builder().id(0).name(productDTO.getCategory()).build())
                 .build();
@@ -43,7 +43,7 @@ public class ProductMapper {
         return FakeStoreProductDTO.builder()
                 .id(product.getId())
                 .title(product.getName())
-                .image(product.getImages().getFirst())
+                .image(product.getImageUrl())
                 .price(product.getPrice())
                 .description(product.getDescription())
                 .category(product.getCategory().getName())

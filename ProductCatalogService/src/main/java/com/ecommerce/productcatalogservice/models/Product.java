@@ -2,21 +2,26 @@ package com.ecommerce.productcatalogservice.models;
 
 
 import com.ecommerce.productcatalogservice.dtos.ProductDTO;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.Setter;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToOne;
+import lombok.*;
 import lombok.experimental.Accessors;
 import lombok.experimental.SuperBuilder;
 
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @SuperBuilder
+@Entity
+@NoArgsConstructor
 public class Product extends BaseModel {
     private String name;
     private String description;
     private double price;
-    private List<String> images;
+    private String imageUrl;
+    @ManyToOne(cascade = CascadeType.ALL)
     private Category category;
 
 }

@@ -29,6 +29,7 @@ public class ProductMapper {
                 .images(productDTO.getImages().stream().map(ImageMapper::toImage).collect(Collectors.toList()))
                 .description(productDTO.getDescription())
                 .category(CategoryMapper.toCategory(productDTO.getCategory()))
+                .state(productDTO.getState())
                 .build();
     }
     static public Product toProduct(FakeStoreProductDTO productDTO) {

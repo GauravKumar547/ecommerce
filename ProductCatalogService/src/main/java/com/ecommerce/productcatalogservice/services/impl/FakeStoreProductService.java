@@ -20,7 +20,7 @@ import java.util.List;
 
 import static java.util.Objects.nonNull;
 
-@Service
+@Service("fsProductService")
 public class FakeStoreProductService implements IProductService {
 
     private final RestTemplateBuilder restTemplateBuilder;

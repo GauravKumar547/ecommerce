@@ -9,6 +9,7 @@ import com.ecommerce.productcatalogservice.models.Image;
 import com.ecommerce.productcatalogservice.models.Product;
 import com.ecommerce.productcatalogservice.services.IProductService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -21,7 +22,7 @@ public class ProductControllerImpl implements ProductController {
     private final IProductService productService;
 
     @Autowired
-    public ProductControllerImpl(IProductService productService) {
+    public ProductControllerImpl(@Qualifier("sqlProductService") IProductService productService) {
         this.productService = productService;
     }
 

@@ -3,6 +3,7 @@ package com.ecommerce.productcatalogservice.models;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -17,6 +18,6 @@ import java.util.List;
 @NoArgsConstructor
 public class Image extends BaseModel {
     private String url;
-    @ManyToMany(cascade = CascadeType.DETACH)
-    private List<Product> products;
+    @ManyToOne(cascade = CascadeType.DETACH)
+    private Product product;
 }

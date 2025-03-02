@@ -15,11 +15,13 @@ import java.util.List;
 @NoArgsConstructor
 public class Product extends BaseModel {
     private String name;
+
+    @Column(columnDefinition = "TEXT")
     private String description;
     private double price;
-    @ManyToMany(mappedBy = "products", cascade = CascadeType.DETACH)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Image> images;
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
     private Category category;
 
 }

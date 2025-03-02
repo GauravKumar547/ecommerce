@@ -1,5 +1,6 @@
 package com.ecommerce.productcatalogservice.dtos;
 
+import com.ecommerce.productcatalogservice.models.State;
 import lombok.Data;
 
 import java.util.List;
@@ -12,4 +13,5 @@ public class ProductDTO {
     private double price;
     private List<ImageDTO> images;
     private CategoryDTO category;
+    private State state = State.ACTIVE;
 }

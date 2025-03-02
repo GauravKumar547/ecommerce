@@ -2,6 +2,7 @@ package com.ecommerce.productcatalogservice.mappers;
 
 import com.ecommerce.productcatalogservice.dtos.CategoryDTO;
 import com.ecommerce.productcatalogservice.models.Category;
+import com.ecommerce.productcatalogservice.models.State;
 
 public class CategoryMapper {
     static public CategoryDTO toCategoryDTO(Category category) {
@@ -20,6 +21,7 @@ public class CategoryMapper {
                 .id(categoryDTO.getId())
                 .name(categoryDTO.getName())
                 .description(categoryDTO.getDescription())
+                .state(categoryDTO.getState())
                 .build():null;
     }
 }

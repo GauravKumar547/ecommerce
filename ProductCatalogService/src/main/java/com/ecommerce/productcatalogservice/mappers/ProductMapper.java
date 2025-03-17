@@ -6,7 +6,9 @@ import com.ecommerce.productcatalogservice.models.Category;
 import com.ecommerce.productcatalogservice.models.Image;
 import com.ecommerce.productcatalogservice.models.Product;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class ProductMapper {
@@ -16,7 +18,7 @@ public class ProductMapper {
         productDTO.setCategory(CategoryMapper.toCategoryDTO(product.getCategory()));
         productDTO.setName(product.getName());
         productDTO.setPrice(product.getPrice());
-        productDTO.setImages(product.getImages().stream().map(ImageMapper::toImageDTO).collect(Collectors.toList()));
+        productDTO.setImages(Optional.ofNullable(product.getImages()).orElse(Collections.emptyList()).stream().map(ImageMapper::toImageDTO).collect(Collectors.toList()));
         productDTO.setDescription(product.getDescription());
 
         return productDTO;
@@ -26,7 +28,7 @@ public class ProductMapper {
                 .id(productDTO.getId())
                 .name(productDTO.getName())
                 .price(productDTO.getPrice())
-                .images(productDTO.getImages().stream().map(ImageMapper::toImage).collect(Collectors.toList()))
+                .images(Optional.ofNullable(productDTO.getImages()).orElse(Collections.emptyList()).stream().map(ImageMapper::toImage).collect(Collectors.toList()))
                 .description(productDTO.getDescription())
                 .category(CategoryMapper.toCategory(productDTO.getCategory()))
                 .state(productDTO.getState())

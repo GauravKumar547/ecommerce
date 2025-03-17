@@ -58,6 +58,9 @@ public class ProductControllerImpl implements ProductController {
     @Override
     @GetMapping("/{id}")
     public ProductDTO getProduct(@PathVariable long id) {
+        if(id<1){
+            throw new IllegalArgumentException("Product id must be greater than 0");
+        }
         Product product = productService.getProductByID(id);
         if (product == null) {
             return null;

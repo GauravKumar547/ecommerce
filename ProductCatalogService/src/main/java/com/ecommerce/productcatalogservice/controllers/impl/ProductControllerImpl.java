@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.IllegalFormatWidthException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -57,6 +58,11 @@ public class ProductControllerImpl implements ProductController {
     @Override
     @PutMapping("/{id}")
     public ProductDTO replaceProduct(@PathVariable long id, @RequestBody ProductDTO product) {
+        if(id<1){
+            throw new IllegalArgumentException("Product id must be greater than 0");
+        } else if(product==null){
+            throw new IllegalArgumentException("Product cannot be null");
+        }
         Product productResponse = productService.replaceProductByID(id,ProductMapper.toProduct(product));
 
         return productResponse==null?null:ProductMapper.toProductDTO(productResponse);
@@ -88,7 +94,12 @@ public class ProductControllerImpl implements ProductController {
     @Override
     @GetMapping("category/{categoryName}")
     public List<ProductDTO> getProductsByCategory(@PathVariable String categoryName) {
-        return productService.getAllProducts().stream().filter(product->product.getCategory().getName().equals(categoryName)).map(ProductMapper::toProductDTO).collect(Collectors.toList());
+        if(categoryName==null){
+            throw new IllegalArgumentException("Category name cannot be null");
+        }else if(categoryName.trim().isEmpty()){
+            throw new IllegalArgumentException("Category name cannot be empty");
+        }
+        return productService.getAllProducts().stream().filter(product-> product.getCategory() != null && product.getCategory().getName().equals(categoryName)).map(ProductMapper::toProductDTO).toList();
     }
 
     @Override

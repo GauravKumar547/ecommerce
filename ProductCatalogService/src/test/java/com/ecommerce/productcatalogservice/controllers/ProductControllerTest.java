@@ -2,7 +2,6 @@ package com.ecommerce.productcatalogservice.controllers;
 
 import com.ecommerce.productcatalogservice.dtos.ProductDTO;
 import com.ecommerce.productcatalogservice.dtos.ResponseDTO;
-import com.ecommerce.productcatalogservice.mappers.CategoryMapper;
 import com.ecommerce.productcatalogservice.mappers.ProductMapper;
 import com.ecommerce.productcatalogservice.models.Category;
 import com.ecommerce.productcatalogservice.models.Product;
@@ -14,6 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -160,7 +162,127 @@ public class ProductControllerTest {
 
     @Test
     public void TestReplaceProduct_WithValidId_RunsSuccessfully() {
+        // Arrange
+        long productId = 1L;
+        Category category = Category.builder().name("test").id(1L).build();
+        Product product = Product.builder().id(productId).name("TestProd").category(category).description("testing " +
+                "desc updated for product").build();
+        Product productExpected = Product.builder().id(productId).name("TestProd123").category(category).description(
+                "testing desc for product").build();
+        when(productService.replaceProductByID(anyLong(), any(Product.class))).thenReturn(productExpected);
 
+        // Act
+        ProductDTO productDTO = productController.replaceProduct(productId,ProductMapper.toProductDTO(productExpected));
+
+        // Assert
+        assertNotNull(productDTO);
+        assertNotEquals(product.getName(), productDTO.getName());
+        assertNotEquals(product.getDescription(), productDTO.getDescription());
+        assertEquals(productExpected.getName(), productDTO.getName());
+        assertEquals(productExpected.getDescription(), productDTO.getDescription());
+        verify(productService, times(1)).replaceProductByID(anyLong(),any(Product.class));
     }
 
+    @Test
+    public void TestReplaceProduct_WithInvalidId_ThrowsIllegalArgumentException() {
+        // Act and Assert
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class,
+                ()-> productController.replaceProduct(-1L,new ProductDTO()));
+        assertEquals("Product id must be greater than 0", illegalArgumentException.getMessage());
+    }
+    @Test
+    public void TestReplaceProduct_WithNullProduct_ThrowsIllegalArgumentException() {
+        // Act and Assert
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class,
+                ()-> productController.replaceProduct(1L,null));
+        assertEquals("Product cannot be null", illegalArgumentException.getMessage());
+    }
+
+    @Test
+    public void TestReplaceProduct_WithServiceThrowingException_ThrowsIllegalArgumentException() {
+        // Arrange
+        when(productService.replaceProductByID(anyLong(),any(Product.class))).thenThrow(new RuntimeException("Service" +
+                " error"));
+        // Act and Assert
+        RuntimeException runtimeException = assertThrows(RuntimeException.class,
+                ()-> productController.replaceProduct(1L,new ProductDTO()));
+        assertEquals("Service error", runtimeException.getMessage());
+    }
+
+    @Test
+    public void TestGetAllProducts_ReturnProductList() {
+        // Arrange
+        when(productService.getAllProducts()).thenReturn(List.of(new Product(), new Product(), new Product()));
+
+        // Act
+        List<ProductDTO> productDTOList = productController.getAllProducts();
+
+        // Assert
+        assertNotNull(productDTOList);
+        assertEquals(3, productDTOList.size());
+    }
+
+    @Test
+    public void TestGetAllProducts_ReturnNull() {
+        // Arrange
+        when(productService.getAllProducts()).thenReturn(Collections.emptyList());
+
+        // Act
+        List<ProductDTO> productDTOList = productController.getAllProducts();
+
+        // Assert
+        assertNull(productDTOList);
+    }
+
+    @Test
+    public void TestGetProductByCategory_WithValidCategoryName_RunsSuccessfully() {
+        // Arrange
+        String categoryName = "test";
+        Category category = Category.builder().name(categoryName).id(1L).build();
+        List<Product> products = List.of(Product.builder().category(category).build(), new Product(), new Product());
+        when(productService.getAllProducts()).thenReturn(products);
+
+        // Act
+        List<ProductDTO> productDTOList = productController.getProductsByCategory(categoryName);
+
+        // Assert
+        assertNotNull(productDTOList);
+        assertEquals(1, productDTOList.size());
+        verify(productService, times(1)).getAllProducts();
+    }
+
+
+    @Test
+    public void TestGetProductByCategory_WithNoProductForCategory_ReturnsEmptyList() {
+        // Arrange
+        String categoryName = "test";
+        Category category = Category.builder().name("test23").id(1L).build();
+        List<Product> products = List.of(Product.builder().category(category).build(),
+                Product.builder().category(category).build(), new Product());
+        when(productService.getAllProducts()).thenReturn(products);
+
+        // Act
+        List<ProductDTO> productDTOList = productController.getProductsByCategory(categoryName);
+
+        // Assert
+        assertNotNull(productDTOList);
+        assertEquals(0, productDTOList.size());
+        verify(productService, times(1)).getAllProducts();
+    }
+
+    @Test
+    public void TestGetProductByCategory_WithNullCategoryName_ThrowsIllegalArgumentException() {
+        // Act and Assert
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class,
+                ()->productController.getProductsByCategory(null));
+        assertEquals("Category name cannot be null", illegalArgumentException.getMessage());
+    }
+
+    @Test
+    public void TestGetProductByCategory_WithInvalidCategoryName_ThrowsIllegalArgumentException() {
+        // Act and Assert
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class,
+                ()->productController.getProductsByCategory(""));
+        assertEquals("Category name cannot be empty", illegalArgumentException.getMessage());
+    }
 }

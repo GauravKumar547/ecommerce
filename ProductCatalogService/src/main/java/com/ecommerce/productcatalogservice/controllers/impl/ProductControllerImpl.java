@@ -5,7 +5,6 @@ import com.ecommerce.productcatalogservice.dtos.ProductDTO;
 import com.ecommerce.productcatalogservice.dtos.ResponseDTO;
 import com.ecommerce.productcatalogservice.mappers.ImageMapper;
 import com.ecommerce.productcatalogservice.mappers.ProductMapper;
-import com.ecommerce.productcatalogservice.models.Image;
 import com.ecommerce.productcatalogservice.models.Product;
 import com.ecommerce.productcatalogservice.services.IProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +29,11 @@ public class ProductControllerImpl implements ProductController {
     @Override
     @PostMapping
     public ProductDTO addProduct(@RequestBody ProductDTO product) {
+        if(product == null) {
+           throw new IllegalArgumentException("Product cannot be null");
+        }else if(product.getCategory() == null) {
+            throw new IllegalArgumentException("Category cannot be null");
+        }
         Product productResponse = productService.createProduct(ProductMapper.toProduct(product));
         return ProductMapper.toProductDTO(productResponse);
     }
@@ -37,6 +41,9 @@ public class ProductControllerImpl implements ProductController {
     @Override
     @DeleteMapping("/{id}")
     public ResponseDTO deleteProduct(@PathVariable long id) {
+        if(id<1){
+            throw new IllegalArgumentException("Product id must be greater than 0");
+        }
         ResponseDTO responseDTO = new ResponseDTO();
         if(productService.deleteProductByID(id)){
             responseDTO.setMessage("Delete product successful");
@@ -75,11 +82,7 @@ public class ProductControllerImpl implements ProductController {
         if (products.isEmpty()) {
             return null;
         }
-        ArrayList<ProductDTO> productDTOs = new ArrayList<>(products.size());
-        for(Product product : products) {
-            productDTOs.add(ProductMapper.toProductDTO(product));
-        }
-        return productDTOs;
+        return products.stream().map(ProductMapper::toProductDTO).toList();
     }
 
     @Override
@@ -105,7 +108,8 @@ public class ProductControllerImpl implements ProductController {
             product1.setDescription(product.getDescription());
         }
         if(!product.getImages().isEmpty()) {
-            product1.setImages(product.getImages().stream().map(img->ImageMapper.toImage(img)).collect(Collectors.toList()));
+            product1.setImages(product.getImages().stream().map(ImageMapper::
+            toImage).collect(Collectors.toList()));
         }
         return ProductMapper.toProductDTO(productService.replaceProductByID(id, product1));
     }

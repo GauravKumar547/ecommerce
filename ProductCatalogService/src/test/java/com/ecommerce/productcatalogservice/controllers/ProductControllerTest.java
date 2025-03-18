@@ -285,4 +285,102 @@ public class ProductControllerTest {
                 ()->productController.getProductsByCategory(""));
         assertEquals("Category name cannot be empty", illegalArgumentException.getMessage());
     }
+
+    @Test
+    public void TestUpdateProduct_WithValidIdAndProduct_RunsSuccessfully() {
+        long productId = 1L;
+        Category category = Category.builder().name("test").id(1L).build();
+        Product product = Product.builder().id(productId).name("TestProd").category(category).description("testing " +
+                "desc updated for product").build();
+        Product productExpected = Product.builder().id(productId).name("TestProd123").category(category).description(
+                "testing desc for product").build();
+        when(productService.replaceProductByID(anyLong(), any(Product.class))).thenReturn(productExpected);
+
+        // Act
+        ProductDTO productDTO = productController.replaceProduct(productId,ProductMapper.toProductDTO(productExpected));
+
+        // Assert
+        assertNotNull(productDTO);
+        assertNotEquals(product.getName(), productDTO.getName());
+        assertNotEquals(product.getDescription(), productDTO.getDescription());
+        assertEquals(productExpected.getName(), productDTO.getName());
+        assertEquals(productExpected.getDescription(), productDTO.getDescription());
+        verify(productService, times(1)).replaceProductByID(anyLong(),any(Product.class));
+    }
+    @Test
+    public void TestUpdateProduct_WithValidIdAndProductWithOneField_RunsSuccessfully() {
+        long productId = 1L;
+        Category category = Category.builder().name("test").id(1L).build();
+        Product product = Product.builder().id(productId).name("TestProd").category(category).description(
+                "testing desc for product").build();
+        Product productExpected = Product.builder().id(productId).name("TestProd123").category(category).description(
+                "testing desc for product").build();
+        ProductDTO updateFieldProduct = new ProductDTO();
+        updateFieldProduct.setName("TestProd123");
+        when(productService.replaceProductByID(anyLong(), any(Product.class))).thenReturn(productExpected);
+        when(productService.getProductByID(anyLong())).thenReturn(product);
+
+        // Act
+        ProductDTO productDTO = productController.updateProduct(productId,updateFieldProduct);
+
+        // Assert
+        assertNotNull(productDTO);
+        System.out.println(productDTO.getName());
+        System.out.println(product.getName());
+        System.out.println(productExpected.getName());
+        assertNotEquals("test", productDTO.getName());
+        assertEquals(productExpected.getName(), productDTO.getName());
+        assertEquals(product.getDescription(), productDTO.getDescription());
+        verify(productService, times(1)).replaceProductByID(anyLong(),any(Product.class));
+        verify(productService, times(1)).getProductByID(anyLong());
+    }
+
+    @Test
+    public void TestUpdateProduct_WIthInvalidId_ThrowsIllegalArgumentException() {
+        // Act and Assert
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, ()->productController.updateProduct(-1L, new ProductDTO()));
+        assertEquals("Product id must be greater than 0", illegalArgumentException.getMessage());
+    }
+
+    @Test
+    public void TestUpdateProduct_WithNullProduct_ThrowsIllegalArgumentException() {
+        // Act and Assert
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, ()->productController.updateProduct(1L, null));
+        assertEquals("Updating data of product cannot be null", illegalArgumentException.getMessage());
+    }
+    @Test
+    public void TestUpdateProduct_WithNonExistingProductId_ThrowsIllegalArgumentException() {
+        // Arrange
+        long id = 5L;
+        when(productService.getProductByID(anyLong())).thenReturn(null);
+
+        // Act and Assert
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class,()-> productController.updateProduct(id, new ProductDTO()));
+        assertEquals("Product with given id not found", illegalArgumentException.getMessage());
+
+    }
+
+    @Test
+    public void TestUpdateProduct_WithValidIdAndProductWithEmptyFields_RunsSuccessfully(){
+        // Arrange
+        long productId = 1L;
+        Category category = Category.builder().name("test").id(1L).build();
+        Product product = Product.builder().id(productId).name("TestProd").category(category).description(
+                "testing desc for product").build();
+        when(productService.getProductByID(anyLong())).thenReturn(product);
+        when(productService.replaceProductByID(anyLong(), any(Product.class))).thenReturn(product);
+
+        // Act
+        ProductDTO productDTO= productController.updateProduct(productId,new ProductDTO());
+
+        // Assert
+        assertNotNull(productDTO);
+        assertEquals("TestProd", productDTO.getName());
+        assertEquals("testing desc for product", productDTO.getDescription());
+        verify(productService, times(1)).replaceProductByID(anyLong(),any(Product.class));
+        verify(productService, times(1)).getProductByID(anyLong());
+
+    }
+
+
 }

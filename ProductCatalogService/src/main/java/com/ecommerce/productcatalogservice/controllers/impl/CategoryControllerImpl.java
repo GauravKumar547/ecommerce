@@ -6,6 +6,7 @@ import com.ecommerce.productcatalogservice.dtos.ResponseDTO;
 import com.ecommerce.productcatalogservice.mappers.CategoryMapper;
 import com.ecommerce.productcatalogservice.models.Category;
 import com.ecommerce.productcatalogservice.services.impl.CategoryService;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,7 +21,11 @@ public class CategoryControllerImpl implements CategoryController {
     }
     @Override
     public CategoryDTO getCategoryById(long id) {
-        return CategoryMapper.toCategoryDTO(categoryService.getCategoryByID(id));
+        if(id<1){
+            throw new IllegalArgumentException("Category id cannot be less than 1");
+        }
+        Category category = categoryService.getCategoryByID(id);
+        return category==null?null:  CategoryMapper.toCategoryDTO(category);
     }
 
     @Override
@@ -30,11 +35,21 @@ public class CategoryControllerImpl implements CategoryController {
 
     @Override
     public CategoryDTO createCategory(CategoryDTO categoryDTO) {
+        if(categoryDTO==null){
+            throw new IllegalArgumentException("Category cannot be null");
+        }else if(categoryDTO.getName()==null || categoryDTO.getName().trim().isEmpty()){
+            throw new IllegalArgumentException("Category name cannot be null or empty");
+        }
         return CategoryMapper.toCategoryDTO(categoryService.createCategory(CategoryMapper.toCategory(categoryDTO)));
     }
 
     @Override
-    public CategoryDTO updateCategory(long id, CategoryDTO categoryDTO) {
+    public CategoryDTO replaceCategory(long id, CategoryDTO categoryDTO) {
+        if(id<1){
+            throw new IllegalArgumentException("Category id cannot be less than 1");
+        }else if(categoryDTO==null){
+            throw new IllegalArgumentException("Category cannot be null");
+        }
         return CategoryMapper.toCategoryDTO(categoryService.replaceCategoryByID(id, CategoryMapper.toCategory(categoryDTO)));
     }
 

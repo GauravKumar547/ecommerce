@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 
+import java.rmi.NoSuchObjectException;
 import java.util.ArrayList;
 import java.util.IllegalFormatWidthException;
 import java.util.List;
@@ -105,9 +106,14 @@ public class ProductControllerImpl implements ProductController {
     @Override
     @PatchMapping("/{id}")
     public ProductDTO updateProduct(@PathVariable long id, @RequestBody ProductDTO product) {
+        if(id<1){
+            throw new IllegalArgumentException("Product id must be greater than 0");
+        } else if(product==null){
+            throw new IllegalArgumentException("Updating data of product cannot be null");
+        }
         Product product1 = productService.getProductByID(id);
         if (product1 == null) {
-            return null;
+            throw new IllegalArgumentException("Product with given id not found");
         }
         if(product.getName()!=null) {
             product1.setName(product.getName());
@@ -118,7 +124,7 @@ public class ProductControllerImpl implements ProductController {
         if(product.getDescription()!=null) {
             product1.setDescription(product.getDescription());
         }
-        if(!product.getImages().isEmpty()) {
+        if(product.getImages()!=null&&!product.getImages().isEmpty()) {
             product1.setImages(product.getImages().stream().map(ImageMapper::
             toImage).collect(Collectors.toList()));
         }

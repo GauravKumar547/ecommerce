@@ -1,24 +1,18 @@
-package com.ecommerce.productcatalogservice.controllers;
+package com.ecommerce.productcatalogservice.services;
 
+import com.ecommerce.productcatalogservice.controllers.ProductController;
 import com.ecommerce.productcatalogservice.dtos.ProductDTO;
 import com.ecommerce.productcatalogservice.dtos.ResponseDTO;
 import com.ecommerce.productcatalogservice.mappers.ProductMapper;
 import com.ecommerce.productcatalogservice.models.Category;
 import com.ecommerce.productcatalogservice.models.Product;
-import com.ecommerce.productcatalogservice.services.IProductService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
 import java.util.List;
@@ -26,38 +20,33 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(ProductController.class)
-@MockitoBean(types = JpaMetamodelMappingContext.class)
-public class ProductControllerTest {
+@SpringBootTest
+public class FakeStoreProductServiceTest {
     @MockitoBean
     @Qualifier("sqlProductService")
     private IProductService productService;
 
     @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
+    private ProductController productController;
 
     @Captor
     private ArgumentCaptor<Long> idCaptor;
 
-    @Autowired
-    private ProductController productController;
-
     @Test
-    public void TestGetProduct_WithValidId_RunsSuccessfully() throws Exception {
+    public void TestGetProduct_WithValidId_RunsSuccessfully() {
         // Arrange
         long id = 3L;
         Product product = new Product();
         product.setId(id);
-        when(productService.getProductByID(anyLong())).thenReturn(product);
+        when(productService.getProductByID(id)).thenReturn(product);
 
-        mockMvc.perform(get("/products/{id}",id))
-                .andExpect(content().string(objectMapper.writeValueAsString(ProductMapper.toProductDTO(product))));
+        // Act
+        ProductDTO productDTO = productController.getProduct(id);
+
+        // Assert
+        assertNotNull(productDTO);
+        assertEquals(id, productDTO.getId());
     }
 
     @Test

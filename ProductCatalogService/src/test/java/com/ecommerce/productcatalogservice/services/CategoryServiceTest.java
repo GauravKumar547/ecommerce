@@ -1,16 +1,14 @@
-package com.ecommerce.productcatalogservice.controllers;
+package com.ecommerce.productcatalogservice.services;
 
+import com.ecommerce.productcatalogservice.controllers.CategoryController;
 import com.ecommerce.productcatalogservice.dtos.CategoryDTO;
 import com.ecommerce.productcatalogservice.mappers.CategoryMapper;
 import com.ecommerce.productcatalogservice.models.Category;
 import com.ecommerce.productcatalogservice.services.impl.CategoryService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
 import java.util.List;
@@ -20,20 +18,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
-//@WebMvcTest(controllers = CategoryController.class)
 @SpringBootTest
-public class CategoryControllerTest {
+public class CategoryServiceTest {
     @MockitoBean
     private CategoryService categoryService;
 
-//    @Autowired
-//    private MockMvc mockMvc;
-
     @Autowired
-    private ObjectMapper objectMapper;
-
-    @Autowired
-    private CategoryController  categoryController;
+    private CategoryController categoryController;
 
     @Test
     public void TestGetCategoryById_WithValidId_RunsSuccessfully() {

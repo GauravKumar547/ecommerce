@@ -1,6 +1,7 @@
 package com.ecommerce.productcatalogservice.models;
 
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -13,6 +14,7 @@ import java.util.List;
 @SuperBuilder
 @Entity
 @NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Product extends BaseModel {
     private String name;
 

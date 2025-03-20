@@ -7,8 +7,11 @@ import com.ecommerce.productcatalogservice.mappers.ImageMapper;
 import com.ecommerce.productcatalogservice.mappers.ProductMapper;
 import com.ecommerce.productcatalogservice.models.Product;
 import com.ecommerce.productcatalogservice.services.IProductService;
+import com.ecommerce.productcatalogservice.utils.response.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,82 +30,97 @@ public class ProductControllerImpl implements ProductController {
 
     @Override
     @PostMapping
-    public ProductDTO addProduct(@RequestBody ProductDTO product) {
+    public ResponseEntity<ApiResponse<ProductDTO>> addProduct(@RequestBody ProductDTO product) {
         if(product == null) {
            throw new IllegalArgumentException("Product cannot be null");
         }else if(product.getCategory() == null) {
             throw new IllegalArgumentException("Category cannot be null");
         }
         Product productResponse = productService.createProduct(ProductMapper.toProduct(product));
-        return ProductMapper.toProductDTO(productResponse);
+        ApiResponse<ProductDTO> apiResponse = new ApiResponse<>();
+        apiResponse.setStatus(HttpStatus.CREATED).setData(ProductMapper.toProductDTO(productResponse));
+        return apiResponse.getResponseEntity();
     }
 
     @Override
     @DeleteMapping("/{id}")
-    public ResponseDTO deleteProduct(@PathVariable long id) {
+    public ResponseEntity<ApiResponse<ResponseDTO>> deleteProduct(@PathVariable long id) {
         if(id<1){
             throw new IllegalArgumentException("Product id must be greater than 0");
         }
         ResponseDTO responseDTO = new ResponseDTO();
+        ApiResponse<ResponseDTO> apiResponse = new ApiResponse<>();
         if(productService.deleteProductByID(id)){
-            responseDTO.setMessage("Delete product successful");
-
+            apiResponse.setData(responseDTO.setMessage("Delete product successful")).setStatus(HttpStatus.OK);
         }else{
-            responseDTO.setMessage("Delete product failed");
+            apiResponse.setData(responseDTO.setMessage("Delete product failed")).setStatus(HttpStatus.NOT_FOUND);
         }
-        return responseDTO;
+
+        return apiResponse.getResponseEntity();
     }
 
     @Override
     @PutMapping("/{id}")
-    public ProductDTO replaceProduct(@PathVariable long id, @RequestBody ProductDTO product) {
+    public ResponseEntity<ApiResponse<ProductDTO>> replaceProduct(@PathVariable long id, @RequestBody ProductDTO product) {
         if(id<1){
             throw new IllegalArgumentException("Product id must be greater than 0");
         } else if(product==null){
             throw new IllegalArgumentException("Product cannot be null");
         }
         Product productResponse = productService.replaceProductByID(id,ProductMapper.toProduct(product));
-
-        return productResponse==null?null:ProductMapper.toProductDTO(productResponse);
+        ApiResponse<ProductDTO> apiResponse = new ApiResponse<>();
+        if(productResponse!=null){
+            apiResponse.setData(ProductMapper.toProductDTO(productResponse)).setStatus(HttpStatus.OK);
+        }else{
+            apiResponse.setError("Replace product not successful").setStatus(HttpStatus.NOT_FOUND);
+        }
+        return  apiResponse.getResponseEntity();
     }
 
     @Override
     @GetMapping("/{id}")
-    public ProductDTO getProduct(@PathVariable long id) {
+    public ResponseEntity<ApiResponse<ProductDTO>> getProduct(@PathVariable long id) {
         if(id<1){
             throw new IllegalArgumentException("Product id must be greater than 0");
         }
         Product product = productService.getProductByID(id);
+        ApiResponse<ProductDTO> apiResponse = new ApiResponse<>();
         if (product == null) {
-            return null;
+            apiResponse.setError("Replace product not successful").setStatus(HttpStatus.NOT_FOUND);
+        }else{
+            apiResponse.setData(ProductMapper.toProductDTO(product)).setStatus(HttpStatus.OK);
         }
-        return ProductMapper.toProductDTO(product);
+        return apiResponse.getResponseEntity();
     }
 
     @Override
     @GetMapping
-    public List<ProductDTO> getAllProducts() {
+    public ResponseEntity<ApiResponse<List<ProductDTO>>> getAllProducts() {
+        ApiResponse<List<ProductDTO>> apiResponse = new ApiResponse<>();
         List<Product> products = productService.getAllProducts();
-        if (products.isEmpty()) {
-            return null;
-        }
-        return products.stream().map(ProductMapper::toProductDTO).toList();
+        List<ProductDTO> productDTOList = products.stream().map(ProductMapper::toProductDTO).toList();
+        apiResponse.setData(productDTOList).setStatus(HttpStatus.OK);
+        return apiResponse.getResponseEntity();
     }
 
     @Override
     @GetMapping("category/{categoryName}")
-    public List<ProductDTO> getProductsByCategory(@PathVariable String categoryName) {
+    public ResponseEntity<ApiResponse<List<ProductDTO>>> getProductsByCategory(@PathVariable String categoryName) {
         if(categoryName==null){
             throw new IllegalArgumentException("Category name cannot be null");
         }else if(categoryName.trim().isEmpty()){
             throw new IllegalArgumentException("Category name cannot be empty");
         }
-        return productService.getAllProducts().stream().filter(product-> product.getCategory() != null && product.getCategory().getName().equals(categoryName)).map(ProductMapper::toProductDTO).toList();
+        ApiResponse<List<ProductDTO>> apiResponse = new ApiResponse<>();
+        List<Product> products = productService.getAllProducts();
+        List<ProductDTO> productDTOList = products.stream().filter(product -> product.getCategory()!=null&&product.getCategory().getName().equals(categoryName)).map(ProductMapper::toProductDTO).toList();
+        apiResponse.setData(productDTOList).setStatus(HttpStatus.OK);
+        return apiResponse.getResponseEntity();
     }
 
     @Override
     @PatchMapping("/{id}")
-    public ProductDTO updateProduct(@PathVariable long id, @RequestBody ProductDTO product) {
+    public ResponseEntity<ApiResponse<ProductDTO>> updateProduct(@PathVariable long id, @RequestBody ProductDTO product) {
         if(id<1){
             throw new IllegalArgumentException("Product id must be greater than 0");
         } else if(product==null){
@@ -125,6 +143,10 @@ public class ProductControllerImpl implements ProductController {
             product1.setImages(product.getImages().stream().map(ImageMapper::
             toImage).collect(Collectors.toList()));
         }
-        return ProductMapper.toProductDTO(productService.replaceProductByID(id, product1));
+        ProductDTO productDTO = ProductMapper.toProductDTO(productService.replaceProductByID(id, product1));
+        ApiResponse<ProductDTO> apiResponse = new ApiResponse<>();
+        apiResponse.setData(productDTO).setStatus(HttpStatus.OK);
+
+        return  apiResponse.getResponseEntity();
     }
 }

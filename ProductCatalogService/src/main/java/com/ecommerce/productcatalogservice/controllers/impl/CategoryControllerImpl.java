@@ -6,8 +6,10 @@ import com.ecommerce.productcatalogservice.dtos.ResponseDTO;
 import com.ecommerce.productcatalogservice.mappers.CategoryMapper;
 import com.ecommerce.productcatalogservice.models.Category;
 import com.ecommerce.productcatalogservice.services.impl.CategoryService;
-import jakarta.persistence.EntityNotFoundException;
+import com.ecommerce.productcatalogservice.utils.response.ApiResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -20,55 +22,78 @@ public class CategoryControllerImpl implements CategoryController {
         this.categoryService = categoryService;
     }
     @Override
-    public CategoryDTO getCategoryById(long id) {
+    public ResponseEntity<ApiResponse<CategoryDTO>> getCategoryById(long id) {
         if(id<1){
             throw new IllegalArgumentException("Category id cannot be less than 1");
         }
         Category category = categoryService.getCategoryByID(id);
-        return category==null?null:  CategoryMapper.toCategoryDTO(category);
+        ApiResponse<CategoryDTO> apiResponse = new ApiResponse<>();
+        if(category==null){
+            apiResponse.setError("Category not found").setStatus(HttpStatus.NOT_FOUND);
+        }else{
+            apiResponse.setData(CategoryMapper.toCategoryDTO(category)).setStatus(HttpStatus.OK);
+        }
+        return apiResponse.getResponseEntity();
     }
 
     @Override
-    public List<CategoryDTO> getAllCategories() {
-        return categoryService.getAllCategories().stream().map(CategoryMapper::toCategoryDTO).collect(Collectors.toList());
+    public ResponseEntity<ApiResponse<List<CategoryDTO>>> getAllCategories() {
+        ApiResponse<List<CategoryDTO>> apiResponse = new ApiResponse<>();
+        List<Category>  categories = categoryService.getAllCategories();
+        List<CategoryDTO> categoryDTOS = categories.stream().map(CategoryMapper::toCategoryDTO).toList();
+        apiResponse.setData(categoryDTOS).setStatus(HttpStatus.OK);
+        return apiResponse.getResponseEntity();
     }
 
     @Override
-    public CategoryDTO createCategory(CategoryDTO categoryDTO) {
+    public ResponseEntity<ApiResponse<CategoryDTO>> createCategory(CategoryDTO categoryDTO) {
         if(categoryDTO==null){
             throw new IllegalArgumentException("Category cannot be null");
         }else if(categoryDTO.getName()==null || categoryDTO.getName().trim().isEmpty()){
             throw new IllegalArgumentException("Category name cannot be null or empty");
         }
-        return CategoryMapper.toCategoryDTO(categoryService.createCategory(CategoryMapper.toCategory(categoryDTO)));
+        ApiResponse<CategoryDTO> apiResponse = new ApiResponse<>();
+        Category category = categoryService.createCategory(CategoryMapper.toCategory(categoryDTO));
+        CategoryDTO categoryDTOResponse = CategoryMapper.toCategoryDTO(category);
+        apiResponse.setData(categoryDTOResponse).setStatus(HttpStatus.CREATED);
+        return apiResponse.getResponseEntity();
     }
 
     @Override
-    public CategoryDTO replaceCategory(long id, CategoryDTO categoryDTO) {
+    public ResponseEntity<ApiResponse<CategoryDTO>> replaceCategory(long id, CategoryDTO categoryDTO) {
         if(id<1){
             throw new IllegalArgumentException("Category id cannot be less than 1");
         }else if(categoryDTO==null){
             throw new IllegalArgumentException("Category cannot be null");
         }
-        return CategoryMapper.toCategoryDTO(categoryService.replaceCategoryByID(id, CategoryMapper.toCategory(categoryDTO)));
+        ApiResponse<CategoryDTO> apiResponse = new ApiResponse<>();
+        Category category =categoryService.replaceCategoryByID(id,CategoryMapper.toCategory(categoryDTO));
+        CategoryDTO categoryDTOResponse = CategoryMapper.toCategoryDTO(category);
+        apiResponse.setData(categoryDTOResponse).setStatus(HttpStatus.OK);
+        return apiResponse.getResponseEntity();
     }
 
     @Override
-    public ResponseDTO deleteCategory(long id) {
+    public ResponseEntity<ApiResponse<ResponseDTO>> deleteCategory(long id) {
         ResponseDTO responseDTO = new ResponseDTO();
+        ApiResponse<ResponseDTO> apiResponse = new ApiResponse<>();
         if(categoryService.deleteCategoryByID(id)){
             responseDTO.setMessage("Successfully deleted Category");
+            apiResponse.setData(responseDTO).setStatus(HttpStatus.OK);
         }else{
             responseDTO.setMessage("Failed to delete Category");
+            apiResponse.setData(responseDTO).setStatus(HttpStatus.NOT_FOUND);
         }
-        return responseDTO;
+        return apiResponse.getResponseEntity();
     }
 
     @Override
-    public CategoryDTO updateCategoryFields(long id, CategoryDTO categoryDTO) {
+    public ResponseEntity<ApiResponse<CategoryDTO>> updateCategoryFields(long id, CategoryDTO categoryDTO) {
+        ApiResponse<CategoryDTO> apiResponse = new ApiResponse<>();
         Category category = categoryService.getCategoryByID(id);
         if(category==null){
-            return null;
+            apiResponse.setError("Category not found to update").setStatus(HttpStatus.NOT_FOUND);
+            return apiResponse.getResponseEntity();
         }
         if(categoryDTO.getName()!=null){
             category.setName(categoryDTO.getName());
@@ -76,6 +101,8 @@ public class CategoryControllerImpl implements CategoryController {
         if(categoryDTO.getDescription()!=null){
             category.setDescription(categoryDTO.getDescription());
         }
-        return CategoryMapper.toCategoryDTO(categoryService.replaceCategoryByID(id, category));
+        Category categoryResponse = categoryService.replaceCategoryByID(id, category);
+        apiResponse.setData(CategoryMapper.toCategoryDTO(categoryResponse)).setStatus(HttpStatus.OK);
+        return apiResponse.getResponseEntity();
     }
 }

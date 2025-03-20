@@ -2,6 +2,7 @@ package com.ecommerce.productcatalogservice.controllers;
 
 import com.ecommerce.productcatalogservice.dtos.ProductDTO;
 import com.ecommerce.productcatalogservice.dtos.ResponseDTO;
+import com.ecommerce.productcatalogservice.mappers.CategoryMapper;
 import com.ecommerce.productcatalogservice.mappers.ProductMapper;
 import com.ecommerce.productcatalogservice.models.Category;
 import com.ecommerce.productcatalogservice.models.Product;
@@ -17,6 +18,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -27,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ProductController.class)
@@ -55,34 +58,29 @@ public class ProductControllerTest {
         Product product = new Product();
         product.setId(id);
         when(productService.getProductByID(anyLong())).thenReturn(product);
-
+        // Act and Assert
         mockMvc.perform(get("/products/{id}",id))
                 .andExpect(content().string(objectMapper.writeValueAsString(ProductMapper.toProductDTO(product))));
     }
 
     @Test
-    public void TestGetProduct_WithNegativeId_ThrowsIllegalArgumentException() {
-        // Arrange
-        long id = -1L;
-
+    public void TestGetProduct_WithNegativeId_ThrowsIllegalArgumentException() throws Exception {
         // Act and Assert
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, ()->productController.getProduct(id));
-        assertEquals("Product id must be greater than 0", exception.getMessage());
+        mockMvc.perform(get("/products/{id}", -1))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Product id must be greater than 0"));
     }
 
     @Test
-    public void TestGetProduct_WithUnavailableId_ReturnsNull(){
+    public void TestGetProduct_WithUnavailableId_ReturnsNull() throws Exception {
         // Arrange
         long id = 4L;
 
-        // Act
-        ProductDTO productDTO = productController.getProduct(id);
-
-        // Assert
-        assertNull(productDTO);
+        // Act and Assert
+        mockMvc.perform(get("/products/{id}", id)).andExpect(status().isOk()).andExpect(content().string(""));
     }
     @Test
-    public void TestGetProduct_ProductServiceCalledWithCorrectArguments_RunsSuccessfully() {
+    public void TestGetProduct_ProductServiceCalledWithCorrectArguments_RunsSuccessfully() throws Exception {
         // Arrange
         long productId = 1L;
         Product product = new Product();
@@ -90,35 +88,32 @@ public class ProductControllerTest {
         product.setName("TestProd");
         when(productService.getProductByID(productId)).thenReturn(product);
 
-        // Act
-        productController.getProduct(productId);
+        // Act and Assert
+        mockMvc.perform(get("/products/{id}", productId)).
+                andExpect(status().isOk()).andExpect(content().string(objectMapper.writeValueAsString(ProductMapper.toProductDTO(product))));
 
-        // Assert
         verify(productService).getProductByID(idCaptor.capture());
         assertEquals(productId, idCaptor.getValue());
     }
 
     @Test
-    public void TestAddProduct_withCompleteValidProduct_RunsSuccessfully(){
+    public void TestAddProduct_withCompleteValidProduct_RunsSuccessfully() throws Exception {
         // Arrange
         Long productId = 1L;
         Category category = Category.builder().name("test").id(1L).build();
-        Product product = Product.builder().name("TestProd").category(category).description("testing desc for product").build();
+        ProductDTO productDTO = new ProductDTO();
+        productDTO.setId(productId);
+        productDTO.setName("TestProd");
+        productDTO.setDescription("testing desc for product");
+        productDTO.setCategory(CategoryMapper.toCategoryDTO(category));
+
         Product productExpected = Product.builder().id(productId).name("TestProd").category(category).description("testing desc for product").build();
         when(productService.createProduct(any(Product.class))).thenReturn(productExpected);
 
-        // Act
-        ProductDTO productDTO =  productController.addProduct(ProductMapper.toProductDTO(product));
-
-        // Assert
-        assertNotNull(productDTO);
-        assertEquals(productId, productDTO.getId());
-        assertEquals(product.getName(), productDTO.getName());
-        assertEquals(product.getDescription(), productDTO.getDescription());
-        assertNotNull(productDTO.getCategory());
-        assertEquals(product.getCategory().getId(), productDTO.getCategory().getId());
-        assertEquals(product.getCategory().getName(), productDTO.getCategory().getName());
-        assertEquals(product.getCategory().getDescription(), productDTO.getCategory().getDescription());
+        // Act and Assert
+        mockMvc.perform(post("/products").content(objectMapper.writeValueAsString(productDTO)).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().string(objectMapper.writeValueAsString(ProductMapper.toProductDTO(productExpected))));
         verify(productService, times(1)).createProduct(any(Product.class));
     }
 

@@ -33,7 +33,7 @@ public class CategoryControllerImpl implements CategoryController {
         }else{
             apiResponse.setData(CategoryMapper.toCategoryDTO(category)).setStatus(HttpStatus.OK);
         }
-        return apiResponse.getResponseEntity();
+        return ApiResponse.getResponseEntity(apiResponse);
     }
 
     @Override
@@ -42,7 +42,7 @@ public class CategoryControllerImpl implements CategoryController {
         List<Category>  categories = categoryService.getAllCategories();
         List<CategoryDTO> categoryDTOS = categories.stream().map(CategoryMapper::toCategoryDTO).toList();
         apiResponse.setData(categoryDTOS).setStatus(HttpStatus.OK);
-        return apiResponse.getResponseEntity();
+        return ApiResponse.getResponseEntity(apiResponse);
     }
 
     @Override
@@ -56,7 +56,7 @@ public class CategoryControllerImpl implements CategoryController {
         Category category = categoryService.createCategory(CategoryMapper.toCategory(categoryDTO));
         CategoryDTO categoryDTOResponse = CategoryMapper.toCategoryDTO(category);
         apiResponse.setData(categoryDTOResponse).setStatus(HttpStatus.CREATED);
-        return apiResponse.getResponseEntity();
+        return ApiResponse.getResponseEntity(apiResponse);
     }
 
     @Override
@@ -70,7 +70,7 @@ public class CategoryControllerImpl implements CategoryController {
         Category category =categoryService.replaceCategoryByID(id,CategoryMapper.toCategory(categoryDTO));
         CategoryDTO categoryDTOResponse = CategoryMapper.toCategoryDTO(category);
         apiResponse.setData(categoryDTOResponse).setStatus(HttpStatus.OK);
-        return apiResponse.getResponseEntity();
+        return ApiResponse.getResponseEntity(apiResponse);
     }
 
     @Override
@@ -84,7 +84,7 @@ public class CategoryControllerImpl implements CategoryController {
             responseDTO.setMessage("Failed to delete Category");
             apiResponse.setData(responseDTO).setStatus(HttpStatus.NOT_FOUND);
         }
-        return apiResponse.getResponseEntity();
+        return ApiResponse.getResponseEntity(apiResponse);
     }
 
     @Override
@@ -93,7 +93,7 @@ public class CategoryControllerImpl implements CategoryController {
         Category category = categoryService.getCategoryByID(id);
         if(category==null){
             apiResponse.setError("Category not found to update").setStatus(HttpStatus.NOT_FOUND);
-            return apiResponse.getResponseEntity();
+            return ApiResponse.getResponseEntity(apiResponse);
         }
         if(categoryDTO.getName()!=null){
             category.setName(categoryDTO.getName());
@@ -103,6 +103,6 @@ public class CategoryControllerImpl implements CategoryController {
         }
         Category categoryResponse = categoryService.replaceCategoryByID(id, category);
         apiResponse.setData(CategoryMapper.toCategoryDTO(categoryResponse)).setStatus(HttpStatus.OK);
-        return apiResponse.getResponseEntity();
+        return ApiResponse.getResponseEntity(apiResponse);
     }
 }

@@ -19,8 +19,8 @@ public class ApiResponse<T> {
         this.error = null;
     }
 
-    public ResponseEntity<ApiResponse<T>> getResponseEntity(){
-        return ResponseEntity.status(status).body(this);
+    public static <V> ResponseEntity<ApiResponse<V>> getResponseEntity(ApiResponse<V> apiResponse) {
+        return ResponseEntity.status(apiResponse.getStatus()).body(apiResponse);
     }
 
 }

@@ -7,6 +7,8 @@ import com.ecommerce.productcatalogservice.mappers.ProductMapper;
 import com.ecommerce.productcatalogservice.models.Category;
 import com.ecommerce.productcatalogservice.models.Product;
 import com.ecommerce.productcatalogservice.services.IProductService;
+import com.ecommerce.productcatalogservice.utils.response.ApiResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -18,18 +20,19 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ProductController.class)
@@ -48,9 +51,6 @@ public class ProductControllerTest {
     @Captor
     private ArgumentCaptor<Long> idCaptor;
 
-    @Autowired
-    private ProductController productController;
-
     @Test
     public void TestGetProduct_WithValidId_RunsSuccessfully() throws Exception {
         // Arrange
@@ -58,9 +58,12 @@ public class ProductControllerTest {
         Product product = new Product();
         product.setId(id);
         when(productService.getProductByID(anyLong())).thenReturn(product);
+        ApiResponse<ProductDTO> response = new ApiResponse<>();
+        response.setData(ProductMapper.toProductDTO(product)).setStatus(HttpStatus.OK);
         // Act and Assert
         mockMvc.perform(get("/products/{id}",id))
-                .andExpect(content().string(objectMapper.writeValueAsString(ProductMapper.toProductDTO(product))));
+                .andExpect(status().isOk())
+                .andExpect(content().string(objectMapper.writeValueAsString(response)));
     }
 
     @Test
@@ -68,16 +71,16 @@ public class ProductControllerTest {
         // Act and Assert
         mockMvc.perform(get("/products/{id}", -1))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Product id must be greater than 0"));
+                .andExpect(jsonPath("$.error").value("Product id must be greater than 0"));
     }
 
     @Test
-    public void TestGetProduct_WithUnavailableId_ReturnsNull() throws Exception {
+    public void TestGetProduct_WithUnavailableId_ReturnsNotFound() throws Exception {
         // Arrange
         long id = 4L;
 
         // Act and Assert
-        mockMvc.perform(get("/products/{id}", id)).andExpect(status().isOk()).andExpect(content().string(""));
+        mockMvc.perform(get("/products/{id}", id)).andExpect(status().isNotFound()).andExpect(jsonPath("$.error").value("Product not found"));
     }
     @Test
     public void TestGetProduct_ProductServiceCalledWithCorrectArguments_RunsSuccessfully() throws Exception {
@@ -87,10 +90,11 @@ public class ProductControllerTest {
         product.setId(productId);
         product.setName("TestProd");
         when(productService.getProductByID(productId)).thenReturn(product);
-
+        ApiResponse<ProductDTO> response = new ApiResponse<>();
+        response.setData(ProductMapper.toProductDTO(product)).setStatus(HttpStatus.OK);
         // Act and Assert
         mockMvc.perform(get("/products/{id}", productId)).
-                andExpect(status().isOk()).andExpect(content().string(objectMapper.writeValueAsString(ProductMapper.toProductDTO(product))));
+                andExpect(status().isOk()).andExpect(content().string(objectMapper.writeValueAsString(response)));
 
         verify(productService).getProductByID(idCaptor.capture());
         assertEquals(productId, idCaptor.getValue());
@@ -99,7 +103,7 @@ public class ProductControllerTest {
     @Test
     public void TestAddProduct_withCompleteValidProduct_RunsSuccessfully() throws Exception {
         // Arrange
-        Long productId = 1L;
+        long productId = 1L;
         Category category = Category.builder().name("test").id(1L).build();
         ProductDTO productDTO = new ProductDTO();
         productDTO.setId(productId);
@@ -109,65 +113,68 @@ public class ProductControllerTest {
 
         Product productExpected = Product.builder().id(productId).name("TestProd").category(category).description("testing desc for product").build();
         when(productService.createProduct(any(Product.class))).thenReturn(productExpected);
+        ApiResponse<ProductDTO> response = new ApiResponse<>();
+        response.setData(ProductMapper.toProductDTO(productExpected)).setStatus(HttpStatus.CREATED);
 
         // Act and Assert
         mockMvc.perform(post("/products").content(objectMapper.writeValueAsString(productDTO)).contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().string(objectMapper.writeValueAsString(ProductMapper.toProductDTO(productExpected))));
+                .andExpect(status().isCreated())
+                .andExpect(content().string(objectMapper.writeValueAsString(response)));
         verify(productService, times(1)).createProduct(any(Product.class));
     }
 
     @Test
-    public void TestAddProduct_WithNullProduct_ThrowsIllegalArgumentException() {
+    public void TestAddProduct_WithEmptyProduct_ReturnsErrorMessage() throws Exception {
         // Act and Assert
-        IllegalArgumentException Exception =  assertThrows(IllegalArgumentException.class,()->productController.addProduct(null));
-        assertEquals("Product cannot be null", Exception.getMessage());
+        mockMvc.perform(post("/products").content("").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotAcceptable());
     }
 
     @Test
-    public void TestAddProduct_WithNullCategory_ThrowsIllegalArgumentException() {
+    public void TestAddProduct_WithNullCategory_ThrowsIllegalArgumentException() throws Exception {
+        // Arrange
+        ProductDTO productDTO = new ProductDTO();
         // Act and Assert
-        IllegalArgumentException Exception =  assertThrows(IllegalArgumentException.class,()->productController.addProduct(new ProductDTO()));
-        assertEquals("Category cannot be null", Exception.getMessage());
+        mockMvc.perform(post("/products").content(objectMapper.writeValueAsString(productDTO)).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Category cannot be null"));
     }
 
     @Test
-    public void TestDeleteProduct_WithValidId_RunsSuccessfully() {
+    public void TestDeleteProduct_WithValidId_RunsSuccessfully() throws Exception {
         // Arrange
         long productId = 1L;
         when(productService.deleteProductByID(anyLong())).thenReturn(true);
 
-        // Act
-        ResponseDTO responseDTO =  productController.deleteProduct(productId);
-
-        // Assert
-        assertEquals("Delete product successful", responseDTO.getMessage());
+        // Act and Assert
+        mockMvc.perform(delete("/products/{id}", productId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.message").value("Delete product successful"));
         verify(productService, times(1)).deleteProductByID(anyLong());
     }
 
     @Test
-    public void TestDeleteProduct_WithNegativeId_ThrowsIllegalArgumentException() {
+    public void TestDeleteProduct_WithNegativeId_ThrowsIllegalArgumentException() throws Exception {
         // Act and Assert
-        IllegalArgumentException Exception =  assertThrows(IllegalArgumentException.class,()->productController.deleteProduct(-1L));
-        assertEquals("Product id must be greater than 0", Exception.getMessage());
+        mockMvc.perform(delete("/products/{id}",-1L))
+                .andExpect(jsonPath("$.error").value("Product id must be greater than 0"));
     }
 
     @Test
-    public void TestDeleteProduct_WithInValidId_FailsSuccessfully() {
+    public void TestDeleteProduct_WithInValidId_FailsSuccessfully() throws Exception {
         // Arrange
         long productId = 5L;
         when(productService.deleteProductByID(anyLong())).thenReturn(false);
 
-        // Act
-        ResponseDTO responseDTO =  productController.deleteProduct(productId);
-
-        // Assert
-        assertEquals("Delete product failed", responseDTO.getMessage());
+        // Act and Assert
+        mockMvc.perform(delete("/products/{id}", productId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.data.message").value("Delete product failed"));
         verify(productService, times(1)).deleteProductByID(anyLong());
     }
 
     @Test
-    public void TestReplaceProduct_WithValidId_RunsSuccessfully() {
+    public void TestReplaceProduct_WithValidId_RunsSuccessfully() throws Exception {
         // Arrange
         long productId = 1L;
         Category category = Category.builder().name("test").id(1L).build();
@@ -176,145 +183,131 @@ public class ProductControllerTest {
         Product productExpected = Product.builder().id(productId).name("TestProd123").category(category).description(
                 "testing desc for product").build();
         when(productService.replaceProductByID(anyLong(), any(Product.class))).thenReturn(productExpected);
+        ApiResponse<ProductDTO> response = new ApiResponse<>();
+        response.setData(ProductMapper.toProductDTO(productExpected)).setStatus(HttpStatus.OK);
 
-        // Act
-        ProductDTO productDTO = productController.replaceProduct(productId,ProductMapper.toProductDTO(productExpected));
+        // Act and Assert
+        mockMvc.perform(put("/products/{id}", productId).content(objectMapper.writeValueAsString(ProductMapper.toProductDTO(product))).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().string(objectMapper.writeValueAsString(response)));
 
-        // Assert
-        assertNotNull(productDTO);
-        assertNotEquals(product.getName(), productDTO.getName());
-        assertNotEquals(product.getDescription(), productDTO.getDescription());
-        assertEquals(productExpected.getName(), productDTO.getName());
-        assertEquals(productExpected.getDescription(), productDTO.getDescription());
         verify(productService, times(1)).replaceProductByID(anyLong(),any(Product.class));
     }
 
     @Test
-    public void TestReplaceProduct_WithInvalidId_ThrowsIllegalArgumentException() {
+    public void TestReplaceProduct_WithInvalidId_ThrowsIllegalArgumentException() throws Exception {
         // Act and Assert
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class,
-                ()-> productController.replaceProduct(-1L,new ProductDTO()));
-        assertEquals("Product id must be greater than 0", illegalArgumentException.getMessage());
-    }
-    @Test
-    public void TestReplaceProduct_WithNullProduct_ThrowsIllegalArgumentException() {
-        // Act and Assert
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class,
-                ()-> productController.replaceProduct(1L,null));
-        assertEquals("Product cannot be null", illegalArgumentException.getMessage());
+        mockMvc.perform(put("/products/{id}",-1L)
+                .content(objectMapper.writeValueAsString(new ProductDTO()))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Product id must be greater than 0"));
     }
 
     @Test
-    public void TestReplaceProduct_WithServiceThrowingException_ThrowsIllegalArgumentException() {
+    public void TestReplaceProduct_WithNullProduct_ThrowsIllegalArgumentException() throws Exception {
+        // Act and Assert
+        mockMvc.perform(put("/products/{id}", 1L).content("").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotAcceptable());
+    }
+
+    @Test
+    public void TestReplaceProduct_WithServiceThrowingException_ThrowsException() throws Exception {
         // Arrange
-        when(productService.replaceProductByID(anyLong(),any(Product.class))).thenThrow(new RuntimeException("Service" +
-                " error"));
+        when(productService.replaceProductByID(anyLong(),any(Product.class))).thenThrow(new RuntimeException("Service error"));
         // Act and Assert
-        RuntimeException runtimeException = assertThrows(RuntimeException.class,
-                ()-> productController.replaceProduct(1L,new ProductDTO()));
-        assertEquals("Service error", runtimeException.getMessage());
+        mockMvc.perform(put("/products/{id}", 1L).content("").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotAcceptable());
     }
 
     @Test
-    public void TestGetAllProducts_ReturnProductList() {
+    public void TestGetAllProducts_ReturnProductList() throws Exception {
         // Arrange
-        when(productService.getAllProducts()).thenReturn(List.of(new Product(), new Product(), new Product()));
-
-        // Act
-        List<ProductDTO> productDTOList = productController.getAllProducts();
-
-        // Assert
-        assertNotNull(productDTOList);
-        assertEquals(3, productDTOList.size());
+        List<Product> productList = List.of(new Product(), new Product(), new Product());
+        when(productService.getAllProducts()).thenReturn(productList);
+        ApiResponse<List<ProductDTO>> response = new ApiResponse<>();
+        response.setData(productList.stream().map(ProductMapper::toProductDTO).toList()).setStatus(HttpStatus.OK);
+        // Act and Assert
+        mockMvc.perform(get("/products"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(objectMapper.writeValueAsString(response)));
     }
 
     @Test
-    public void TestGetAllProducts_ReturnNull() {
+    public void TestGetAllProducts_ReturnNull() throws Exception {
         // Arrange
         when(productService.getAllProducts()).thenReturn(Collections.emptyList());
-
-        // Act
-        List<ProductDTO> productDTOList = productController.getAllProducts();
-
-        // Assert
-        assertNull(productDTOList);
+        ApiResponse<List<ProductDTO>> response = new ApiResponse<>();
+        response.setData(Collections.emptyList()).setStatus(HttpStatus.OK);
+        // Act and Assert
+        mockMvc.perform(get("/products"))
+                .andExpect(status().isOk())
+                .andExpect(content().string( objectMapper.writeValueAsString(response)));
     }
 
     @Test
-    public void TestGetProductByCategory_WithValidCategoryName_RunsSuccessfully() {
+    public void TestGetProductByCategory_WithValidCategoryName_RunsSuccessfully() throws Exception {
         // Arrange
         String categoryName = "test";
         Category category = Category.builder().name(categoryName).id(1L).build();
         List<Product> products = List.of(Product.builder().category(category).build(), new Product(), new Product());
         when(productService.getAllProducts()).thenReturn(products);
-
-        // Act
-        List<ProductDTO> productDTOList = productController.getProductsByCategory(categoryName);
-
-        // Assert
-        assertNotNull(productDTOList);
-        assertEquals(1, productDTOList.size());
+        ApiResponse<List<ProductDTO>> response = new ApiResponse<>();
+        response.setData(products.stream().filter(product->product.getCategory()!=null&&categoryName.equals(product.getCategory().getName())).map(ProductMapper::toProductDTO).toList()).setStatus(HttpStatus.OK);
+        // Act and Assert
+        mockMvc.perform(get("/products/category/{categoryName}", categoryName))
+                .andExpect(status().isOk())
+                .andExpect(content().json(objectMapper.writeValueAsString(response)));
         verify(productService, times(1)).getAllProducts();
     }
 
 
     @Test
-    public void TestGetProductByCategory_WithNoProductForCategory_ReturnsEmptyList() {
+    public void TestGetProductByCategory_WithNoProductForCategory_ReturnsEmptyList() throws Exception {
         // Arrange
         String categoryName = "test";
         Category category = Category.builder().name("test23").id(1L).build();
         List<Product> products = List.of(Product.builder().category(category).build(),
                 Product.builder().category(category).build(), new Product());
         when(productService.getAllProducts()).thenReturn(products);
-
-        // Act
-        List<ProductDTO> productDTOList = productController.getProductsByCategory(categoryName);
-
-        // Assert
-        assertNotNull(productDTOList);
-        assertEquals(0, productDTOList.size());
+        ApiResponse<List<ProductDTO>> response = new ApiResponse<>();
+        response.setData(Collections.emptyList()).setStatus(HttpStatus.OK);
+        // Act and Assert
+        mockMvc.perform(get("/products/category/{categoryName}", categoryName))
+                .andExpect(status().isOk())
+                .andExpect(content().json(objectMapper.writeValueAsString(response)));
         verify(productService, times(1)).getAllProducts();
     }
 
     @Test
-    public void TestGetProductByCategory_WithNullCategoryName_ThrowsIllegalArgumentException() {
+    public void TestGetProductByCategory_WithInvalidCategoryName_ThrowsIllegalArgumentException() throws Exception {
         // Act and Assert
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class,
-                ()->productController.getProductsByCategory(null));
-        assertEquals("Category name cannot be null", illegalArgumentException.getMessage());
+        mockMvc.perform(get("/products/category/ "))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Category name cannot be empty"));
     }
 
     @Test
-    public void TestGetProductByCategory_WithInvalidCategoryName_ThrowsIllegalArgumentException() {
-        // Act and Assert
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class,
-                ()->productController.getProductsByCategory(""));
-        assertEquals("Category name cannot be empty", illegalArgumentException.getMessage());
-    }
-
-    @Test
-    public void TestUpdateProduct_WithValidIdAndProduct_RunsSuccessfully() {
+    public void TestUpdateProduct_WithValidIdAndProduct_RunsSuccessfully() throws Exception {
         long productId = 1L;
         Category category = Category.builder().name("test").id(1L).build();
         Product product = Product.builder().id(productId).name("TestProd").category(category).description("testing " +
                 "desc updated for product").build();
         Product productExpected = Product.builder().id(productId).name("TestProd123").category(category).description(
                 "testing desc for product").build();
+        when(productService.getProductByID(anyLong())).thenReturn(product);
         when(productService.replaceProductByID(anyLong(), any(Product.class))).thenReturn(productExpected);
-
-        // Act
-        ProductDTO productDTO = productController.replaceProduct(productId,ProductMapper.toProductDTO(productExpected));
-
-        // Assert
-        assertNotNull(productDTO);
-        assertNotEquals(product.getName(), productDTO.getName());
-        assertNotEquals(product.getDescription(), productDTO.getDescription());
-        assertEquals(productExpected.getName(), productDTO.getName());
-        assertEquals(productExpected.getDescription(), productDTO.getDescription());
+        ApiResponse<ProductDTO> response = new ApiResponse<>();
+        response.setData(ProductMapper.toProductDTO(productExpected)).setStatus(HttpStatus.OK);
+        // Act and Assert
+        mockMvc.perform(patch("/products/{id}", productId).content(objectMapper.writeValueAsString(ProductMapper.toProductDTO(product))).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().string(objectMapper.writeValueAsString(response)));
         verify(productService, times(1)).replaceProductByID(anyLong(),any(Product.class));
+        verify(productService, times(1)).getProductByID(anyLong());
     }
     @Test
-    public void TestUpdateProduct_WithValidIdAndProductWithOneField_RunsSuccessfully() {
+    public void TestUpdateProduct_WithValidIdAndProductWithOneField_RunsSuccessfully() throws Exception {
         long productId = 1L;
         Category category = Category.builder().name("test").id(1L).build();
         Product product = Product.builder().id(productId).name("TestProd").category(category).description(
@@ -326,48 +319,45 @@ public class ProductControllerTest {
         when(productService.replaceProductByID(anyLong(), any(Product.class))).thenReturn(productExpected);
         when(productService.getProductByID(anyLong())).thenReturn(product);
 
-        // Act
-        ProductDTO productDTO = productController.updateProduct(productId,updateFieldProduct);
-
-        // Assert
-        assertNotNull(productDTO);
-        System.out.println(productDTO.getName());
-        System.out.println(product.getName());
-        System.out.println(productExpected.getName());
-        assertNotEquals("test", productDTO.getName());
-        assertEquals(productExpected.getName(), productDTO.getName());
-        assertEquals(product.getDescription(), productDTO.getDescription());
+        ApiResponse<ProductDTO> response = new ApiResponse<>();
+        response.setData(ProductMapper.toProductDTO(productExpected)).setStatus(HttpStatus.OK);
+        // Act and Assert
+        mockMvc.perform(patch("/products/{id}", productId).content(objectMapper.writeValueAsString(ProductMapper.toProductDTO(product))).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().string(objectMapper.writeValueAsString(response)));
         verify(productService, times(1)).replaceProductByID(anyLong(),any(Product.class));
         verify(productService, times(1)).getProductByID(anyLong());
     }
 
     @Test
-    public void TestUpdateProduct_WIthInvalidId_ThrowsIllegalArgumentException() {
+    public void TestUpdateProduct_WIthInvalidId_ThrowsIllegalArgumentException() throws Exception {
         // Act and Assert
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, ()->productController.updateProduct(-1L, new ProductDTO()));
-        assertEquals("Product id must be greater than 0", illegalArgumentException.getMessage());
+        mockMvc.perform(patch("/products/{id}", -1L).content(objectMapper.writeValueAsString(new ProductDTO())).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Product id must be greater than 0"));
     }
 
     @Test
-    public void TestUpdateProduct_WithNullProduct_ThrowsIllegalArgumentException() {
+    public void TestUpdateProduct_WithNullProduct_ThrowsIllegalArgumentException() throws Exception {
         // Act and Assert
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, ()->productController.updateProduct(1L, null));
-        assertEquals("Updating data of product cannot be null", illegalArgumentException.getMessage());
+        mockMvc.perform(patch("/products/{id}", 1L).content("").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotAcceptable());
     }
     @Test
-    public void TestUpdateProduct_WithNonExistingProductId_ThrowsIllegalArgumentException() {
+    public void TestUpdateProduct_WithNonExistingProductId_ThrowsIllegalArgumentException() throws Exception {
         // Arrange
         long id = 5L;
         when(productService.getProductByID(anyLong())).thenReturn(null);
 
         // Act and Assert
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class,()-> productController.updateProduct(id, new ProductDTO()));
-        assertEquals("Product with given id not found", illegalArgumentException.getMessage());
+        mockMvc.perform(patch("/products/{id}", id).content(objectMapper.writeValueAsString(new ProductDTO())).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Product with given id not found"));
 
     }
 
     @Test
-    public void TestUpdateProduct_WithValidIdAndProductWithEmptyFields_RunsSuccessfully(){
+    public void TestUpdateProduct_WithValidIdAndProductWithEmptyFields_RunsSuccessfully() throws Exception {
         // Arrange
         long productId = 1L;
         Category category = Category.builder().name("test").id(1L).build();
@@ -375,14 +365,14 @@ public class ProductControllerTest {
                 "testing desc for product").build();
         when(productService.getProductByID(anyLong())).thenReturn(product);
         when(productService.replaceProductByID(anyLong(), any(Product.class))).thenReturn(product);
+        ApiResponse<ProductDTO> response = new ApiResponse<>();
+        response.setData(ProductMapper.toProductDTO(product)).setStatus(HttpStatus.OK);
 
-        // Act
-        ProductDTO productDTO= productController.updateProduct(productId,new ProductDTO());
+        // Act and Assert
+        mockMvc.perform(patch("/products/{id}", productId).content(objectMapper.writeValueAsString(ProductMapper.toProductDTO(new Product()))).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json(objectMapper.writeValueAsString(response)));
 
-        // Assert
-        assertNotNull(productDTO);
-        assertEquals("TestProd", productDTO.getName());
-        assertEquals("testing desc for product", productDTO.getDescription());
         verify(productService, times(1)).replaceProductByID(anyLong(),any(Product.class));
         verify(productService, times(1)).getProductByID(anyLong());
 

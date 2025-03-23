@@ -39,7 +39,7 @@ public class ProductControllerImpl implements ProductController {
         Product productResponse = productService.createProduct(ProductMapper.toProduct(product));
         ApiResponse<ProductDTO> apiResponse = new ApiResponse<>();
         apiResponse.setStatus(HttpStatus.CREATED).setData(ProductMapper.toProductDTO(productResponse));
-        return apiResponse.getResponseEntity();
+        return ApiResponse.getResponseEntity(apiResponse);
     }
 
     @Override
@@ -56,7 +56,7 @@ public class ProductControllerImpl implements ProductController {
             apiResponse.setData(responseDTO.setMessage("Delete product failed")).setStatus(HttpStatus.NOT_FOUND);
         }
 
-        return apiResponse.getResponseEntity();
+        return ApiResponse.getResponseEntity(apiResponse);
     }
 
     @Override
@@ -74,7 +74,7 @@ public class ProductControllerImpl implements ProductController {
         }else{
             apiResponse.setError("Replace product not successful").setStatus(HttpStatus.NOT_FOUND);
         }
-        return  apiResponse.getResponseEntity();
+        return  ApiResponse.getResponseEntity(apiResponse);
     }
 
     @Override
@@ -86,11 +86,11 @@ public class ProductControllerImpl implements ProductController {
         Product product = productService.getProductByID(id);
         ApiResponse<ProductDTO> apiResponse = new ApiResponse<>();
         if (product == null) {
-            apiResponse.setError("Replace product not successful").setStatus(HttpStatus.NOT_FOUND);
+            apiResponse.setError("Product not found").setStatus(HttpStatus.NOT_FOUND);
         }else{
             apiResponse.setData(ProductMapper.toProductDTO(product)).setStatus(HttpStatus.OK);
         }
-        return apiResponse.getResponseEntity();
+        return ApiResponse.getResponseEntity(apiResponse);
     }
 
     @Override
@@ -100,22 +100,20 @@ public class ProductControllerImpl implements ProductController {
         List<Product> products = productService.getAllProducts();
         List<ProductDTO> productDTOList = products.stream().map(ProductMapper::toProductDTO).toList();
         apiResponse.setData(productDTOList).setStatus(HttpStatus.OK);
-        return apiResponse.getResponseEntity();
+        return ApiResponse.getResponseEntity(apiResponse);
     }
 
     @Override
     @GetMapping("category/{categoryName}")
     public ResponseEntity<ApiResponse<List<ProductDTO>>> getProductsByCategory(@PathVariable String categoryName) {
-        if(categoryName==null){
-            throw new IllegalArgumentException("Category name cannot be null");
-        }else if(categoryName.trim().isEmpty()){
+        if(categoryName.trim().isEmpty()){
             throw new IllegalArgumentException("Category name cannot be empty");
         }
         ApiResponse<List<ProductDTO>> apiResponse = new ApiResponse<>();
         List<Product> products = productService.getAllProducts();
         List<ProductDTO> productDTOList = products.stream().filter(product -> product.getCategory()!=null&&product.getCategory().getName().equals(categoryName)).map(ProductMapper::toProductDTO).toList();
         apiResponse.setData(productDTOList).setStatus(HttpStatus.OK);
-        return apiResponse.getResponseEntity();
+        return ApiResponse.getResponseEntity(apiResponse);
     }
 
     @Override
@@ -147,6 +145,6 @@ public class ProductControllerImpl implements ProductController {
         ApiResponse<ProductDTO> apiResponse = new ApiResponse<>();
         apiResponse.setData(productDTO).setStatus(HttpStatus.OK);
 
-        return  apiResponse.getResponseEntity();
+        return  ApiResponse.getResponseEntity(apiResponse);
     }
 }

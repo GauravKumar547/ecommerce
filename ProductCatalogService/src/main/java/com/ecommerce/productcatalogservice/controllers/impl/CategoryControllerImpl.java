@@ -10,19 +10,21 @@ import com.ecommerce.productcatalogservice.utils.response.ApiResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
+@RequestMapping("/categories")
 public class CategoryControllerImpl implements CategoryController {
     CategoryService categoryService;
     public CategoryControllerImpl(@Qualifier("sqlCategoryService") CategoryService categoryService) {
         this.categoryService = categoryService;
     }
+
     @Override
-    public ResponseEntity<ApiResponse<CategoryDTO>> getCategoryById(long id) {
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<CategoryDTO>> getCategoryById(@PathVariable long id) {
         if(id<1){
             throw new IllegalArgumentException("Category id cannot be less than 1");
         }
@@ -37,6 +39,7 @@ public class CategoryControllerImpl implements CategoryController {
     }
 
     @Override
+    @GetMapping
     public ResponseEntity<ApiResponse<List<CategoryDTO>>> getAllCategories() {
         ApiResponse<List<CategoryDTO>> apiResponse = new ApiResponse<>();
         List<Category>  categories = categoryService.getAllCategories();
@@ -46,7 +49,8 @@ public class CategoryControllerImpl implements CategoryController {
     }
 
     @Override
-    public ResponseEntity<ApiResponse<CategoryDTO>> createCategory(CategoryDTO categoryDTO) {
+    @PostMapping
+    public ResponseEntity<ApiResponse<CategoryDTO>> createCategory(@RequestBody CategoryDTO categoryDTO) {
         if(categoryDTO==null){
             throw new IllegalArgumentException("Category cannot be null");
         }else if(categoryDTO.getName()==null || categoryDTO.getName().trim().isEmpty()){
@@ -60,7 +64,9 @@ public class CategoryControllerImpl implements CategoryController {
     }
 
     @Override
-    public ResponseEntity<ApiResponse<CategoryDTO>> replaceCategory(long id, CategoryDTO categoryDTO) {
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<CategoryDTO>> replaceCategory(@PathVariable long id,
+                                                                    @RequestBody CategoryDTO categoryDTO) {
         if(id<1){
             throw new IllegalArgumentException("Category id cannot be less than 1");
         }else if(categoryDTO==null){
@@ -74,7 +80,8 @@ public class CategoryControllerImpl implements CategoryController {
     }
 
     @Override
-    public ResponseEntity<ApiResponse<ResponseDTO>> deleteCategory(long id) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<ResponseDTO>> deleteCategory(@PathVariable long id) {
         ResponseDTO responseDTO = new ResponseDTO();
         ApiResponse<ResponseDTO> apiResponse = new ApiResponse<>();
         if(categoryService.deleteCategoryByID(id)){
@@ -88,7 +95,8 @@ public class CategoryControllerImpl implements CategoryController {
     }
 
     @Override
-    public ResponseEntity<ApiResponse<CategoryDTO>> updateCategoryFields(long id, CategoryDTO categoryDTO) {
+    @PatchMapping("/{id}")
+    public ResponseEntity<ApiResponse<CategoryDTO>> updateCategoryFields(@PathVariable long id, @RequestBody CategoryDTO categoryDTO) {
         ApiResponse<CategoryDTO> apiResponse = new ApiResponse<>();
         Category category = categoryService.getCategoryByID(id);
         if(category==null){

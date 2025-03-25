@@ -1,6 +1,7 @@
 package com.ecommerce.productcatalogservice.controllers;
 
 import com.ecommerce.productcatalogservice.dtos.CategoryDTO;
+import com.ecommerce.productcatalogservice.dtos.ResponseDTO;
 import com.ecommerce.productcatalogservice.mappers.CategoryMapper;
 import com.ecommerce.productcatalogservice.models.Category;
 import com.ecommerce.productcatalogservice.services.impl.CategoryService;
@@ -145,7 +146,7 @@ public class CategoryControllerTest {
        // Arrange
         long categoryId = 1L;
         Category category = Category.builder().id(categoryId).name("Test Category update").description("Test Description update").build();
-        when(categoryService.replaceCategoryByID(anyLong(), any())).thenReturn(category);
+        when(categoryService.replaceCategoryByID(anyLong(), any(Category.class))).thenReturn(category);
         ApiResponse<CategoryDTO> response = new ApiResponse<>();
         response.setData(CategoryMapper.toCategoryDTO(category)).setStatus(HttpStatus.OK);
         // Act and Assert
@@ -169,6 +170,105 @@ public class CategoryControllerTest {
         mockMvc.perform(put("/categories/{id}",1L).content("").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotAcceptable());
     }
+    @Test
+    public void TestDeleteCategory_WithValidId_RunsSuccessfully() throws Exception{
+        // Arrange
+        long categoryId = 1L;
+        when(categoryService.deleteCategoryByID(anyLong())).thenReturn(true);
+        ResponseDTO responseDTO = new ResponseDTO();
+        responseDTO.setMessage("Successfully deleted Category");
+        ApiResponse<ResponseDTO> response = new ApiResponse<>();
+        response.setData(responseDTO).setStatus(HttpStatus.OK);
+        // Act and Assert
+        mockMvc.perform(delete("/categories/{id}", categoryId))
+                .andExpect(status().isOk())
+                .andExpect(content().string(objectMapper.writeValueAsString(response)));
+    }
+    @Test
+    public void TestDeleteCategory_WithInvalidId_ReturnsError() throws Exception {
+        // Act and Assert
+        mockMvc.perform(delete("/categories/{id}",-1L))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Category id cannot be less than 1"));
 
-    // update fields and delete test to be written
+    }
+    @Test
+    public void TestDeleteCategory_WithIdHavingNoCategory_ReturnsNotFound() throws Exception {
+        // Arrange
+        long categoryId = 1L;
+        when(categoryService.deleteCategoryByID(anyLong())).thenReturn(false);
+        ResponseDTO responseDTO = new ResponseDTO();
+        responseDTO.setMessage("Failed to delete Category");
+        ApiResponse<ResponseDTO> response = new ApiResponse<>();
+        response.setData(responseDTO).setStatus(HttpStatus.NOT_FOUND);
+        // Act and Assert
+        mockMvc.perform(delete("/categories/{id}", categoryId))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(objectMapper.writeValueAsString(response)));
+
+    }
+
+    @Test
+    public void TestUpdateCategoryFields_WithValidIdAndCategory_RunsSuccessfully() throws Exception{
+        // Arrange
+        long categoryId = 1L;
+        Category category = Category.builder().id(categoryId).name("Test Category").description("Test Description").build();
+        Category categoryExpected = Category.builder().id(categoryId).name("Test Category").description("Test Description update").build();
+        when(categoryService.replaceCategoryByID(anyLong(), any(Category.class))).thenReturn(categoryExpected);
+        when(categoryService.getCategoryByID(anyLong())).thenReturn(category);
+
+        CategoryDTO categoryDTO = new CategoryDTO();
+        categoryDTO.setDescription("Test Description update");
+
+        ApiResponse<CategoryDTO> response = new ApiResponse<>();
+        response.setData(CategoryMapper.toCategoryDTO(categoryExpected)).setStatus(HttpStatus.OK);
+
+        // Act and Assert
+        mockMvc.perform(patch("/categories/{id}",categoryId).content(objectMapper.writeValueAsString(categoryDTO)).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().string(objectMapper.writeValueAsString(response)));
+        verify(categoryService, times(1)).replaceCategoryByID(anyLong(), any(Category.class));
+    }
+
+    @Test
+    public void TestUpdateCategoryFields_WithInvalidId_ReturnsError() throws Exception {
+        // Act and Assert
+        mockMvc.perform(patch("/categories/{id}",-1L).content(objectMapper.writeValueAsString(new CategoryDTO())).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Category id cannot be less than 1"));
+    }
+    @Test
+    public void TestUpdateCategoryFields_WithValidIdAndNullCategory_ReturnsError() throws Exception {
+        // Act and Assert
+        mockMvc.perform(patch("/categories/{id}",1L).content("").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotAcceptable());
+    }
+    @Test
+    public void TestUpdateCategoryFields_WithIdWhoseCategoryIsNotAvailable_ReturnsNotFoundMessage() throws Exception {
+        // Arrange
+        ApiResponse<ResponseDTO> response = new ApiResponse<>();
+        response.setError("Category not found to update").setStatus(HttpStatus.NOT_FOUND);
+        // Act and Assert
+        mockMvc.perform(patch("/categories/{id}",1L).content(objectMapper.writeValueAsString(new CategoryDTO())).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(objectMapper.writeValueAsString(response)));
+    }
+
+    @Test
+    public void TestUpdateCategoryFields_WithValidIdAndCategoryWithNoFields_RunsSuccessfully() throws Exception{
+        // Arrange
+        long categoryId = 1L;
+        Category category = Category.builder().id(categoryId).name("Test Category").description("Test Description").build();
+        when(categoryService.replaceCategoryByID(anyLong(), any(Category.class))).thenReturn(category);
+        when(categoryService.getCategoryByID(anyLong())).thenReturn(category);
+
+        ApiResponse<CategoryDTO> response = new ApiResponse<>();
+        response.setData(CategoryMapper.toCategoryDTO(category)).setStatus(HttpStatus.OK);
+
+        // Act and Assert
+        mockMvc.perform(patch("/categories/{id}",categoryId).content(objectMapper.writeValueAsString(new CategoryDTO())).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().string(objectMapper.writeValueAsString(response)));
+        verify(categoryService, times(1)).replaceCategoryByID(anyLong(), any(Category.class));
+    }
 }

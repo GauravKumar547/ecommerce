@@ -4,166 +4,171 @@ import com.ecommerce.productcatalogservice.dtos.CategoryDTO;
 import com.ecommerce.productcatalogservice.mappers.CategoryMapper;
 import com.ecommerce.productcatalogservice.models.Category;
 import com.ecommerce.productcatalogservice.services.impl.CategoryService;
+import com.ecommerce.productcatalogservice.utils.response.ApiResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-//@WebMvcTest(controllers = CategoryController.class)
-@SpringBootTest
+@WebMvcTest( CategoryController.class)
+@MockitoBean(types = JpaMetamodelMappingContext.class)
 public class CategoryControllerTest {
     @MockitoBean
+    @Qualifier("sqlCategoryService")
     private CategoryService categoryService;
 
-////    @Autowired
-////    private MockMvc mockMvc;
-//
-//    @Autowired
-//    private ObjectMapper objectMapper;
-//
-//    @Autowired
-//    private CategoryController  categoryController;
-//
-//    @Test
-//    public void TestGetCategoryById_WithValidId_RunsSuccessfully() {
-//        // Arrange
-//        long categoryId = 1L;
-//        Category category = Category.builder().id(categoryId).name("Test Category").description("Test Description").build();
-//        when(categoryService.getCategoryByID(anyLong())).thenReturn(category);
-//        // Act
-//        CategoryDTO categoryDTO = categoryController.getCategoryById(categoryId);
-//        // Assert
-//        assertNotNull(categoryDTO);
-//        assertEquals(categoryId, categoryDTO.getId());
-//        assertEquals("Test Category", categoryDTO.getName());
-//        assertEquals("Test Description", categoryDTO.getDescription());
-//    }
-//
-//    @Test
-//    public void TestGetCategoryById_WithInvalidId_ThrowsIllegalArgumentException() {
-//        // Act and Assert
-//        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class,()->categoryController.getCategoryById(-1L));
-//        assertEquals("Category id cannot be less than 1", illegalArgumentException.getMessage());
-//    }
-//
-//    @Test
-//    public void TestGetCategoryById_WithNonExistingId_ThrowsIllegalArgumentException() {
-//        // Arrange
-//        long categoryId = 5L;
-//        when(categoryService.getCategoryByID(anyLong())).thenReturn(null);
-//        // Act
-//        CategoryDTO categoryDTO = categoryController.getCategoryById(categoryId);
-//        // Assert
-//        assertNull(categoryDTO);
-//    }
-//
-//    @Test
-//    public void TestGetAllCategories_RunsSuccessfully(){
-//        // Arrange
-//        when(categoryService.getAllCategories()).thenReturn(List.of(new Category(), new Category(), new Category()));
-//
-//        // Act
-//        List<CategoryDTO> categoryDTOList = categoryController.getAllCategories();
-//
-//        // Assert
-//        assertNotNull(categoryDTOList);
-//        assertEquals(3, categoryDTOList.size());
-//    }
-//
-//    @Test
-//    public void TestGetAllCategories_ReturnsEmptyList(){
-//        // Arrange
-//        when(categoryService.getAllCategories()).thenReturn(Collections.emptyList());
-//
-//        // Act
-//        List<CategoryDTO> categoryDTOList = categoryController.getAllCategories();
-//
-//        // Assert
-//        assertNotNull(categoryDTOList);
-//        assertEquals(0, categoryDTOList.size());
-//    }
-//
-//    @Test
-//    public void TestCreateCategory_WIthValidCategoryDetails_RunsSuccessfully(){
-//        // Arrange
-//        long categoryId = 1L;
-//        Category category = Category.builder().name("Test Category").description("Test Description").build();
-//        Category categoryExpected = Category.builder().id(categoryId).name("Test Category").description("Test Description").build();
-//        when(categoryService.createCategory(any(Category.class))).thenReturn(categoryExpected);
-//        // Act
-//        CategoryDTO categoryDTO = categoryController.createCategory(CategoryMapper.toCategoryDTO(category));
-//        // Assert
-//        assertNotNull(categoryDTO);
-//        assertEquals(categoryId, categoryDTO.getId());
-//        assertEquals("Test Category", categoryDTO.getName());
-//        assertEquals("Test Description", categoryDTO.getDescription());
-//        verify(categoryService, times(1)).createCategory(any(Category.class));
-//    }
-//
-//    @Test
-//    public void TestCreateCategory_WithNullCategoryDetails_ThrowsIllegalArgumentException() {
-//        // Act and Assert
-//        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, ()->categoryController.createCategory(null));
-//        assertEquals("Category cannot be null", illegalArgumentException.getMessage());
-//        verify(categoryService, times(1)).createCategory(any(Category.class));
-//    }
-//
-//    @Test
-//    public void TestCreateCategory_WithNullCategoryName_ThrowsIllegalArgumentException() {
-//        // Act and Assert
-//        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, ()->categoryController.createCategory(new CategoryDTO()));
-//        assertEquals("Category name cannot be null or empty", illegalArgumentException.getMessage());
-//        verify(categoryService, times(1)).createCategory(any(Category.class));
-//    }
-//
-//    @Test
-//    public void TestCreateCategory_WithEmptyCategoryName_ThrowsIllegalArgumentException() {
-//        // Arrange
-//        CategoryDTO categoryDTO = new CategoryDTO();
-//        categoryDTO.setName("");
-//        // Act and Assert
-//        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, ()->categoryController.createCategory(categoryDTO));
-//        assertEquals("Category name cannot be null or empty", illegalArgumentException.getMessage());
-//        verify(categoryService, times(1)).createCategory(any(Category.class));
-//    }
-//
-//    @Test
-//    public void TestReplaceCategory_WithValidIdAndCategoryDetails_RunsSuccessfully(){
-////       // Arrange
-//        long categoryId = 1L;
-//        Category category = Category.builder().id(categoryId).name("Test Category update").description("Test Description update").build();
-//        when(categoryService.replaceCategoryByID(anyLong(), any())).thenReturn(category);
-//        // Act
-//        CategoryDTO categoryDTO = categoryController.replaceCategory(categoryId, CategoryMapper.toCategoryDTO(category));
-//        // Assert
-//        assertNotNull(categoryDTO);
-//        assertEquals(categoryId, categoryDTO.getId());
-//        assertEquals("Test Category update", categoryDTO.getName());
-//        assertEquals("Test Description update", categoryDTO.getDescription());
-//        verify(categoryService, times(1)).replaceCategoryByID(anyLong(), any(Category.class));
-//    }
-//    @Test
-//    public void TestReplaceCategory_WithInvalidId_ThrowsIllegalArgumentException() {
-//        // Act and Assert
-//        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, ()->categoryController.replaceCategory(-1L, new CategoryDTO()));
-//        assertEquals("Category id cannot be less than 1", illegalArgumentException.getMessage());
-//    }
-//
-//    @Test
-//    public void TestReplaceCategory_WithNullCategory_ThrowsIllegalArgumentException() {
-//        // Act and Assert
-//        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, ()->categoryController.replaceCategory(1L, null));
-//        assertEquals("Category id cannot be null", illegalArgumentException.getMessage());
-//    }
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    public void TestGetCategoryById_WithValidId_RunsSuccessfully() throws Exception {
+        // Arrange
+        long categoryId = 1L;
+        Category category = Category.builder().id(categoryId).name("Test Category").description("Test Description").build();
+        when(categoryService.getCategoryByID(anyLong())).thenReturn(category);
+        ApiResponse<CategoryDTO> response = new ApiResponse<>();
+        response.setData(CategoryMapper.toCategoryDTO(category)).setStatus(HttpStatus.OK);
+        // Act and Assert
+        mockMvc.perform(get("/categories/{id}", categoryId))
+                .andExpect(status().isOk())
+                .andExpect(content().string(objectMapper.writeValueAsString(response)));
+    }
+
+    @Test
+    public void TestGetCategoryById_WithInvalidId_ThrowsIllegalArgumentException() throws Exception {
+        // Act and Assert
+        mockMvc.perform(get("/categories/{id}", -1L))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Category id cannot be less than 1"));
+    }
+
+    @Test
+    public void TestGetCategoryById_WithNonExistingId_ThrowsIllegalArgumentException() throws Exception {
+        // Arrange
+        long categoryId = 5L;
+        when(categoryService.getCategoryByID(anyLong())).thenReturn(null);
+        // Act and Assert
+        mockMvc.perform(get("/categories/{id}", categoryId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("Category not found"));
+    }
+
+    @Test
+    public void TestGetAllCategories_RunsSuccessfully() throws Exception {
+        // Arrange
+        List<Category> categories = List.of(new Category(), new Category(), new Category());
+        List<CategoryDTO> categoriesDTO = categories.stream().map(CategoryMapper::toCategoryDTO).toList();
+        when(categoryService.getAllCategories()).thenReturn(categories);
+        ApiResponse<List<CategoryDTO>> response = new ApiResponse<>();
+        response.setData(categoriesDTO).setStatus(HttpStatus.OK);
+        // Act and Assert
+        mockMvc.perform(get("/categories"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(objectMapper.writeValueAsString(response)));
+    }
+
+    @Test
+    public void TestGetAllCategories_ReturnsEmptyList() throws Exception {
+        // Arrange
+        when(categoryService.getAllCategories()).thenReturn(Collections.emptyList());
+        ApiResponse<List<CategoryDTO>> response = new ApiResponse<>();
+        response.setData(Collections.emptyList()).setStatus(HttpStatus.OK);
+
+        // Act and Assert
+        mockMvc.perform(get("/categories"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(objectMapper.writeValueAsString(response)));
+    }
+
+    @Test
+    public void TestCreateCategory_WIthValidCategoryDetails_RunsSuccessfully() throws Exception{
+        // Arrange
+        long categoryId = 1L;
+        Category category = Category.builder().name("Test Category").description("Test Description").build();
+        Category categoryExpected = Category.builder().id(categoryId).name("Test Category").description("Test Description").build();
+        when(categoryService.createCategory(any(Category.class))).thenReturn(categoryExpected);
+        ApiResponse<CategoryDTO> response = new ApiResponse<>();
+        response.setData(CategoryMapper.toCategoryDTO(categoryExpected)).setStatus(HttpStatus.CREATED);
+        // Act and Assert
+        mockMvc.perform(post("/categories").content(objectMapper.writeValueAsString(CategoryMapper.toCategoryDTO(category))).contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(status().isCreated())
+                        .andExpect(content().string(objectMapper.writeValueAsString(response)));
+        verify(categoryService, times(1)).createCategory(any(Category.class));
+    }
+
+    @Test
+    public void TestCreateCategory_WithNullCategoryDetails_ThrowsIllegalArgumentException() throws Exception{
+        // Act and Assert
+        mockMvc.perform(post("/categories").content("").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotAcceptable());
+    }
+
+    @Test
+    public void TestCreateCategory_WithNullCategoryName_ThrowsIllegalArgumentException() throws Exception {
+        // Act and Assert
+        mockMvc.perform(post("/categories").content(objectMapper.writeValueAsString(new CategoryDTO())).contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Category name cannot be null or empty"));
+    }
+
+    @Test
+    public void TestCreateCategory_WithEmptyCategoryName_ThrowsIllegalArgumentException() throws Exception {
+        // Arrange
+        CategoryDTO categoryDTO = new CategoryDTO();
+        categoryDTO.setName("");
+        // Act and Assert
+        mockMvc.perform(post("/categories").content(objectMapper.writeValueAsString(categoryDTO)).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Category name cannot be null or empty"));
+    }
+
+    @Test
+    public void TestReplaceCategory_WithValidIdAndCategoryDetails_RunsSuccessfully() throws Exception{
+       // Arrange
+        long categoryId = 1L;
+        Category category = Category.builder().id(categoryId).name("Test Category update").description("Test Description update").build();
+        when(categoryService.replaceCategoryByID(anyLong(), any())).thenReturn(category);
+        ApiResponse<CategoryDTO> response = new ApiResponse<>();
+        response.setData(CategoryMapper.toCategoryDTO(category)).setStatus(HttpStatus.OK);
+        // Act and Assert
+        mockMvc.perform(put("/categories/{id}",categoryId).content(objectMapper.writeValueAsString(CategoryMapper.toCategoryDTO(category))).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().string(objectMapper.writeValueAsString(response)));
+        verify(categoryService, times(1)).replaceCategoryByID(anyLong(), any(Category.class));
+    }
+
+    @Test
+    public void TestReplaceCategory_WithInvalidId_ThrowsIllegalArgumentException() throws Exception {
+        // Act and Assert
+        mockMvc.perform(put("/categories/{id}",-1L).content(objectMapper.writeValueAsString(new CategoryDTO())).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Category id cannot be less than 1"));
+    }
+
+    @Test
+    public void TestReplaceCategory_WithNullCategory_ThrowsIllegalArgumentException() throws Exception {
+        // Act and Assert
+        mockMvc.perform(put("/categories/{id}",1L).content("").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotAcceptable());
+    }
+
+    // update fields and delete test to be written
 }

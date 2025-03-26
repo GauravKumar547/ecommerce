@@ -1,4 +1,4 @@
-package models;
+package org.example.userauthservice.models;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;

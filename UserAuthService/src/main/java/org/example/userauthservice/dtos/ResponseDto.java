@@ -1,4 +1,4 @@
-package dtos;
+package org.example.userauthservice.dtos;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

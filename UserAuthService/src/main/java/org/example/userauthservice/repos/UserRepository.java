@@ -1,6 +1,6 @@
-package repos;
+package org.example.userauthservice.repos;
 
-import models.User;
+import org.example.userauthservice.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

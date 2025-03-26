@@ -1,7 +1,6 @@
-package models;
+package org.example.userauthservice.models;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -13,7 +12,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.util.Date;
 
-@Entity
+@MappedSuperclass
 @SuperBuilder
 @Accessors(chain = true)
 @Getter

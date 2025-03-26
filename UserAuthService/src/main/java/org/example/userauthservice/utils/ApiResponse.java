@@ -1,4 +1,4 @@
-package utils;
+package org.example.userauthservice.utils;
 
 import lombok.Setter;
 import lombok.experimental.Accessors;

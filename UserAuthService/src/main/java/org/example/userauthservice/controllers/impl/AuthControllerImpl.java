@@ -12,6 +12,7 @@ import org.example.userauthservice.services.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -30,21 +31,22 @@ public class AuthControllerImpl implements AuthController {
 
     @PostMapping("/login")
     @Override
-    public ResponseEntity<ApiResponse<UserDto>> login(LoginRequestDto requestDto) {
+    public ResponseEntity<ApiResponse<UserDto>> login(@RequestBody LoginRequestDto requestDto) {
         ApiResponse<UserDto> apiResponse = new ApiResponse<>();
-        if(requestDto.getEmail() == null || requestDto.getPassword() == null) {
+        if(requestDto.getEmail() == null || requestDto.getPassword() == null || requestDto.getEmail().isEmpty() || requestDto.getPassword().isEmpty()) {
            apiResponse.setError("No email or password provided").setStatus(HttpStatus.BAD_REQUEST);
-            return ApiResponse.getResponseEntity(apiResponse);
+           return ApiResponse.getResponseEntity(apiResponse);
         }
         Pair<User, String> loggedInDetails = authService.login(requestDto.getEmail(), requestDto.getPassword());
         MultiValueMap<String,String> headers = new LinkedMultiValueMap<>();
-        headers.add(HttpHeaders.SET_COOKIE, loggedInDetails.b);
+        ResponseCookie cookie = ResponseCookie.from("token", loggedInDetails.b).build();
+        headers.add(HttpHeaders.SET_COOKIE,cookie.toString());
         apiResponse.setStatus(HttpStatus.OK).setData(UserMapper.toUserDto(loggedInDetails.a));
         return ApiResponse.getResponseEntity(apiResponse, headers);
     }
     @PostMapping("/signup")
     @Override
-    public ResponseEntity<ApiResponse<ResponseDto>> signup(UserDto requestDto) {
+    public ResponseEntity<ApiResponse<ResponseDto>> signup(@RequestBody UserDto requestDto) {
         if(requestDto.getEmail() == null || requestDto.getPassword() == null || requestDto.getName() == null|| requestDto.getEmail().isEmpty() || requestDto.getPassword().isEmpty()||requestDto.getName().isEmpty()) {
              throw new IllegalArgumentException("Required parameters not provided");
         }
@@ -53,8 +55,6 @@ public class AuthControllerImpl implements AuthController {
             ResponseDto responseDto = new ResponseDto();
             responseDto.setMessage("User registered successfully");
             apiResponse.setStatus(HttpStatus.CREATED).setData(responseDto);
-        }else{
-            apiResponse.setStatus(HttpStatus.BAD_REQUEST).setError("User already exists");
         }
         return ApiResponse.getResponseEntity(apiResponse);
     }
@@ -72,7 +72,7 @@ public class AuthControllerImpl implements AuthController {
 
     @PostMapping("/validate_token")
     @Override
-    public ResponseEntity<ApiResponse<ResponseDto>> validateToken(ValidateTokenDto requestDto) {
+    public ResponseEntity<ApiResponse<ResponseDto>> validateToken(@RequestBody ValidateTokenDto requestDto) {
         if (requestDto.getToken() == null || requestDto.getToken().isEmpty() ) {
             throw new IllegalArgumentException("Token not provided");
         }

@@ -52,6 +52,9 @@ public class CategoryService implements ICategoryService {
 
     @Override
     public Category createCategory(Category category) {
+        if(category==null){
+           throw new IllegalArgumentException("Category cannot be null");
+        }
         return categoryRepository.save(category);
     }
 }

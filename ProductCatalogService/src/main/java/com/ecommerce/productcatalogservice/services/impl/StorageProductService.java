@@ -67,7 +67,9 @@ public class StorageProductService implements IProductService {
     @Override
     @Transactional
     public Product createProduct(Product product) {
-        if(product.getId()>0 && productRepository.existsById(product.getId())){
+        if(product==null){
+            throw new IllegalArgumentException("Product cannot be null");
+        }else if(product.getId()>0 && productRepository.existsById(product.getId())){
             throw new IllegalArgumentException("Product with given id already exists");
         }
         Optional<Category> categoryOptional = categoryRepository.findById(product.getCategory().getId());

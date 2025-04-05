@@ -82,6 +82,9 @@ public class CategoryControllerImpl implements CategoryController {
     @Override
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<ResponseDTO>> deleteCategory(@PathVariable long id) {
+        if(id<1){
+            throw new IllegalArgumentException("Category id cannot be less than 1");
+        }
         ResponseDTO responseDTO = new ResponseDTO();
         ApiResponse<ResponseDTO> apiResponse = new ApiResponse<>();
         if(categoryService.deleteCategoryByID(id)){
@@ -99,7 +102,9 @@ public class CategoryControllerImpl implements CategoryController {
     public ResponseEntity<ApiResponse<CategoryDTO>> updateCategoryFields(@PathVariable long id, @RequestBody CategoryDTO categoryDTO) {
         ApiResponse<CategoryDTO> apiResponse = new ApiResponse<>();
         Category category = categoryService.getCategoryByID(id);
-        if(category==null){
+        if(id<1){
+            throw new IllegalArgumentException("Category id cannot be less than 1");
+        } else if(category==null){
             apiResponse.setError("Category not found to update").setStatus(HttpStatus.NOT_FOUND);
             return ApiResponse.getResponseEntity(apiResponse);
         }

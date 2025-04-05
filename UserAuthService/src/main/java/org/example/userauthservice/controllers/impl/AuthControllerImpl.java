@@ -27,10 +27,7 @@ public class AuthControllerImpl implements AuthController {
     public AuthControllerImpl(AuthService authService) {
         this.authService = authService;
     }
-    @GetMapping
-    public String hello() {
-        return "Hello World";
-    }
+
     @PostMapping("/login")
     @Override
     public ResponseEntity<ApiResponse<UserDto>> login(LoginRequestDto requestDto) {

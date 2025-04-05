@@ -78,8 +78,12 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void logout(String token, long userId) {
         Optional<Session> sessionOptional = sessionRepository.findByTokenAndUserId(token, userId);
-        sessionOptional.ifPresent(sessionRepository::delete);
-        throw new NoActiveSessionFoundException("There is no active session found for the user");
+        if(sessionOptional.isPresent()){
+            sessionRepository.delete(sessionOptional.get());
+         }else{
+            throw new NoActiveSessionFoundException("There is no active session found for the user");
+        }
+
     }
 
     @Override
@@ -104,6 +108,9 @@ public class AuthServiceImpl implements AuthService {
                 return false;
             }
             return true;
+        }
+        catch (UserUnauthorizedException e){
+            throw e;
         }
         catch(Exception e){
             return false;

@@ -61,7 +61,7 @@ public class AuthControllerImpl implements AuthController {
 
     @PostMapping("/logout/{id}")
     @Override
-    public ResponseEntity<ApiResponse<ResponseDto>> logout(@RequestHeader(name = "Cookie", required = false) String cookie, @PathVariable long id) {
+    public ResponseEntity<ApiResponse<ResponseDto>> logout(@RequestHeader(name = "Set-Cookie", required = false) String cookie, @PathVariable long id) {
         ApiResponse<ResponseDto> apiResponse = new ApiResponse<>();
         authService.logout(cookie,id);
         ResponseDto responseDto = new ResponseDto();

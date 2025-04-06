@@ -7,7 +7,9 @@ import org.example.userauthservice.config.Config;
 import org.example.userauthservice.dtos.LoginRequestDto;
 import org.example.userauthservice.dtos.ResponseDto;
 import org.example.userauthservice.dtos.UserDto;
+import org.example.userauthservice.dtos.ValidateTokenDto;
 import org.example.userauthservice.exceptions.InvalidCredentialsException;
+import org.example.userauthservice.exceptions.NoActiveSessionFoundException;
 import org.example.userauthservice.exceptions.UserAlreadyExistingException;
 import org.example.userauthservice.exceptions.UserNotRegisteredException;
 import org.example.userauthservice.models.Role;
@@ -19,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
@@ -27,8 +30,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import javax.crypto.SecretKey;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -214,7 +217,102 @@ public class AuthControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("User already exists with this email"));
     }
+    @Test
     public void testLogout_WithValidUserId_RunsSuccessfully() throws Exception{
+        // Arrange
+        long userId = 1L;
+        String token = Jwts.builder().signWith(secretKey).claim("userId", userId).compact();
+        String cookie = "token=" + token;
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, cookie);
+        ResponseDto responseDto = new ResponseDto();
+        responseDto.setMessage("User logged out successfully");
+        ApiResponse<ResponseDto> apiResponse = new ApiResponse<>();
+        apiResponse.setData(responseDto).setStatus(HttpStatus.OK);
+        // Act and Assert
+        mockMvc.perform(post("/auth/logout/{id}",userId).contentType(MediaType.APPLICATION_JSON).headers(headers))
+                .andExpect(status().isOk())
+                .andExpect(content().string(objectMapper.writeValueAsString(apiResponse)));
+
+    }
+    @Test
+    public void testLogout_WithNoValidUserIdSession_RunsSuccessfully() throws Exception{
+        // Arrange
+        long userId = 1L;
+        String token = Jwts.builder().signWith(secretKey).claim("userId", userId).compact();
+        String cookie = "token=" + token;
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, cookie);
+        doThrow(new NoActiveSessionFoundException("There is no active session found for the user")).when(authService).logout(anyString(), anyLong());
+
+        // Act and Assert
+        mockMvc.perform(post("/auth/logout/{id}",userId).contentType(MediaType.APPLICATION_JSON).headers(headers))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("There is no active session found for the user"));
+
+    }
+
+    @Test
+    public void testValidateToken_WithValidTokenAndUserId_RunsSuccessfully() throws Exception{
+        // Arrange
+        long userId = 1L;
+        String token = Jwts.builder().signWith(secretKey).claim("userId", userId).compact();
+        ValidateTokenDto validateTokenDto = new ValidateTokenDto();
+        validateTokenDto.setUserId(userId);
+        validateTokenDto.setToken(token);
+        ApiResponse<ResponseDto> apiResponse = new ApiResponse<>();
+        ResponseDto responseDto = new ResponseDto();
+        responseDto.setMessage("Token validated successfully");
+        apiResponse.setStatus(HttpStatus.OK).setData(responseDto);
+        when(authService.validateToken(anyString(), anyLong())).thenReturn(true);
+        // Act and Assert
+        mockMvc.perform(post("/auth/validate_token").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(validateTokenDto)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(objectMapper.writeValueAsString(apiResponse)));
+
+    }
+    @Test
+    public void testValidateToken_WithInvalidTokenAndUserId_RunsSuccessfully() throws Exception{
+        // Arrange
+        long userId = 1L;
+        ValidateTokenDto validateTokenDto = new ValidateTokenDto();
+        validateTokenDto.setUserId(userId);
+        // Act and Assert
+        mockMvc.perform(post("/auth/validate_token").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(validateTokenDto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Token not provided"));
+    }
+    @Test
+    public void testValidateToken_WithValidTokenAndInvalidUserId_RunsSuccessfully() throws Exception{
+        // Arrange
+        long userId = -1L;
+        String token = Jwts.builder().signWith(secretKey).claim("userId", userId).compact();
+        ValidateTokenDto validateTokenDto = new ValidateTokenDto();
+        validateTokenDto.setUserId(userId);
+        validateTokenDto.setToken(token);
+        // Act and Assert
+        mockMvc.perform(post("/auth/validate_token").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(validateTokenDto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("User id not provided"));
+    }
+    @Test
+    public void testValidateToken_WithValidTokenAndDifferentUserId_RunsSuccessfully() throws Exception{
+        // Arrange
+        long userId = 1L;
+        long differentUserId = 2L;
+        String token = Jwts.builder().signWith(secretKey).claim("userId", userId).compact();
+        ValidateTokenDto validateTokenDto = new ValidateTokenDto();
+        validateTokenDto.setUserId(differentUserId);
+        validateTokenDto.setToken(token);
+        ApiResponse<ResponseDto> apiResponse = new ApiResponse<>();
+        ResponseDto responseDto = new ResponseDto();
+        responseDto.setMessage("Invalid token");
+        apiResponse.setStatus(HttpStatus.UNAUTHORIZED).setData(responseDto);
+        when(authService.validateToken(anyString(), anyLong())).thenReturn(false);
+        // Act and Assert
+        mockMvc.perform(post("/auth/validate_token").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(validateTokenDto)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().string(objectMapper.writeValueAsString(apiResponse)));
 
     }
 }

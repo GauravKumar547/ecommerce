@@ -9,6 +9,7 @@ import com.ecommerce.productcatalogservice.services.IProductService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,17 +18,24 @@ import java.util.Optional;
 public class StorageProductService implements IProductService {
     private final CategoryRepository categoryRepository;
     ProductRepository productRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Autowired
-    public StorageProductService(ProductRepository productRepository, CategoryRepository categoryRepository) {
+    public StorageProductService(ProductRepository productRepository, CategoryRepository categoryRepository, RedisTemplate<String, Object> redisTemplate) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
+        this.redisTemplate = redisTemplate;
     }
 
     @Override
     @Transactional
     public Product getProductByID(long productId) {
+        Product cachedProduct = (Product) redisTemplate.opsForHash().get("products", productId);
+        if (cachedProduct != null) {
+            return cachedProduct;
+        }
         Optional<Product> product  = productRepository.findById(productId);
+        product.ifPresent(value -> redisTemplate.opsForHash().put("products", productId, value));
         return product.orElse(null);
     }
 

@@ -1,5 +1,6 @@
 package com.ecommerce.productcatalogservice.models;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToMany;
@@ -9,6 +10,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.io.Serializable;
 import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
@@ -16,8 +18,9 @@ import java.util.List;
 @Entity
 @SuperBuilder
 @NoArgsConstructor
-public class Image extends BaseModel {
+public class Image extends BaseModel implements Serializable {
     private String url;
     @ManyToOne(cascade = CascadeType.DETACH)
+    @JsonManagedReference
     private Product product;
 }

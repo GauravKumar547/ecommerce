@@ -1,9 +1,12 @@
 package org.example.userauthservice.services.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import org.antlr.v4.runtime.misc.Pair;
+import org.example.userauthservice.clients.KafkaProducerClient;
+import org.example.userauthservice.dtos.EmailDto;
 import org.example.userauthservice.exceptions.*;
 import org.example.userauthservice.models.Session;
 import org.example.userauthservice.models.User;
@@ -11,6 +14,8 @@ import org.example.userauthservice.repos.SessionRepository;
 import org.example.userauthservice.repos.UserRepository;
 import org.example.userauthservice.services.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.KafkaException;
+import org.springframework.kafka.core.KafkaProducerException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -26,15 +31,18 @@ public class AuthServiceImpl implements AuthService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final SessionRepository sessionRepository;
     private final SecretKey secretKey;
+    private final KafkaProducerClient kafkaProducerClient;
+    private final ObjectMapper objectMapper;
 
     @Autowired
     public AuthServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, SessionRepository sessionRepository,
-                           SecretKey secretKey) {
+                           SecretKey secretKey, KafkaProducerClient kafkaProducerClient, ObjectMapper objectMapper) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.sessionRepository = sessionRepository;
         this.secretKey = secretKey;
-
+        this.kafkaProducerClient = kafkaProducerClient;
+        this.objectMapper = objectMapper;
     }
     @Override
     public Pair<User, String> login(String email, String password) {
@@ -71,7 +79,18 @@ public class AuthServiceImpl implements AuthService {
         }
         String password = passwordEncoder.encode(user.getPassword());
         user.setPassword(password);
-        userRepository.save(user);
+        user = userRepository.save(user);
+        try{
+            EmailDto emailDto = new EmailDto();
+            emailDto.setTo(user.getEmail ());
+            emailDto.setFrom("gauravkhanna547@gmail.com");
+            emailDto.setBody("Thanks for signing. Have a great shopping experience.");
+            emailDto.setSubject("Welcome to E-commerce");
+
+            kafkaProducerClient.sendMessage("user-signup-topic", objectMapper.writeValueAsString(emailDto));
+        }catch(Exception e){
+            throw new KafkaException("Error while sending message to kafka topic");
+        }
         return true;
     }
 

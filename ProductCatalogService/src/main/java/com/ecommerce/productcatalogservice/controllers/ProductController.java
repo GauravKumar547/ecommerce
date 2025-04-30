@@ -15,4 +15,5 @@ public interface ProductController {
     public ResponseEntity<ApiResponse<List<ProductDTO>>> getAllProducts();
     public ResponseEntity<ApiResponse<List<ProductDTO>>> getProductsByCategory(String categoryName);
     public ResponseEntity<ApiResponse<ProductDTO>> updateProduct(long id, ProductDTO product);
+    public ResponseEntity<ApiResponse<ProductDTO>> getProductByUserScope(Long productId, Long userId);
 }

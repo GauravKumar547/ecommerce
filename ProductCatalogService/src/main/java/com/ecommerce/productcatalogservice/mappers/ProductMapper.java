@@ -20,6 +20,7 @@ public class ProductMapper {
         productDTO.setPrice(product.getPrice());
         productDTO.setImages(Optional.ofNullable(product.getImages()).orElse(Collections.emptyList()).stream().map(ImageMapper::toImageDTO).collect(Collectors.toList()));
         productDTO.setDescription(product.getDescription());
+        productDTO.setStatus(product.getStatus());
 
         return productDTO;
     }
@@ -32,6 +33,7 @@ public class ProductMapper {
                 .description(productDTO.getDescription())
                 .category(CategoryMapper.toCategory(productDTO.getCategory()))
                 .state(productDTO.getState())
+                .status(productDTO.getStatus())
                 .build();
     }
     static public Product toProduct(FakeStoreProductDTO productDTO) {

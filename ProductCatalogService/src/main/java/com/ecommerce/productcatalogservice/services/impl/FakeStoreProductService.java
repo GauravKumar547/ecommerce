@@ -84,4 +84,9 @@ public class FakeStoreProductService implements IProductService {
         }
         return null;
     }
+
+    @Override
+    public Product getProductByUserScope(Long productId, Long userId) {
+        return getProductByID(productId);
+    }
 }

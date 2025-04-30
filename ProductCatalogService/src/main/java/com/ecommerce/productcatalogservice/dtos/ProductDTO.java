@@ -1,5 +1,6 @@
 package com.ecommerce.productcatalogservice.dtos;
 
+import com.ecommerce.productcatalogservice.models.ProductStatus;
 import com.ecommerce.productcatalogservice.models.State;
 import lombok.Data;
 
@@ -14,4 +15,5 @@ public class ProductDTO{
     private List<ImageDTO> images;
     private CategoryDTO category;
     private State state = State.ACTIVE;
+    private ProductStatus status = ProductStatus.LISTED;
 }

@@ -32,4 +32,7 @@ public class Product extends BaseModel implements Serializable {
     @JsonManagedReference
     private Category category;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "varchar(255) default 'LISTED'")
+    private ProductStatus status = ProductStatus.LISTED;
 }

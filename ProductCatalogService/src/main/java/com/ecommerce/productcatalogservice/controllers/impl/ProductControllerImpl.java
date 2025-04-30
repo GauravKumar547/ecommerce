@@ -147,4 +147,23 @@ public class ProductControllerImpl implements ProductController {
 
         return  ApiResponse.getResponseEntity(apiResponse);
     }
+
+    @Override
+    @GetMapping("/productId/user/{userId}")
+    public ResponseEntity<ApiResponse<ProductDTO>> getProductByUserScope(@PathVariable Long productId, @PathVariable Long userId) {
+        if(productId == null || userId == null) {
+            throw new IllegalArgumentException("Product id and User id cannot be null");
+        }
+        if(productId<1 || userId<1) {
+            throw new IllegalArgumentException("Product id and User id must be greater than 0");
+        }
+        ApiResponse<ProductDTO> apiResponse = new ApiResponse<>();
+        Product product = productService.getProductByUserScope(productId, userId);
+        if (product == null) {
+            apiResponse.setError("User not authorized to access").setStatus(HttpStatus.UNAUTHORIZED);
+            return ApiResponse.getResponseEntity(apiResponse);
+        }
+        apiResponse.setData(ProductMapper.toProductDTO(product)).setStatus(HttpStatus.OK);
+        return ApiResponse.getResponseEntity(apiResponse);
+    }
 }

@@ -1,7 +1,9 @@
 package com.ecommerce.productcatalogservice.services.impl;
 
+import com.ecommerce.productcatalogservice.dtos.UserDto;
 import com.ecommerce.productcatalogservice.models.Category;
 import com.ecommerce.productcatalogservice.models.Product;
+import com.ecommerce.productcatalogservice.models.ProductStatus;
 import com.ecommerce.productcatalogservice.models.State;
 import com.ecommerce.productcatalogservice.repos.CategoryRepository;
 import com.ecommerce.productcatalogservice.repos.ProductRepository;
@@ -10,7 +12,11 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,12 +25,14 @@ public class StorageProductService implements IProductService {
     private final CategoryRepository categoryRepository;
     ProductRepository productRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final RestTemplate restTemplate;
 
     @Autowired
-    public StorageProductService(ProductRepository productRepository, CategoryRepository categoryRepository, RedisTemplate<String, Object> redisTemplate) {
+    public StorageProductService(ProductRepository productRepository, CategoryRepository categoryRepository, RedisTemplate<String, Object> redisTemplate, RestTemplate restTemplate) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.redisTemplate = redisTemplate;
+        this.restTemplate = restTemplate;
     }
 
     @Override
@@ -83,5 +91,28 @@ public class StorageProductService implements IProductService {
         Optional<Category> categoryOptional = categoryRepository.findById(product.getCategory().getId());
         categoryOptional.ifPresent(product::setCategory);
         return productRepository.save(product);
+    }
+
+    @Override
+    public Product getProductByUserScope(Long productId, Long userId) {
+        Optional<Product> productOptional = productRepository.findById(productId);
+        if(productOptional.isEmpty()){
+            throw new IllegalArgumentException("Product not found");
+        }
+        Product product = productOptional.get();
+        if(product.getStatus().equals(ProductStatus.LISTED)){
+            return  product;
+        }
+
+        ResponseEntity<UserDto> userResponse = restTemplate.getForEntity("http://user-auth-service/users/{userId}", UserDto.class, userId);
+        if(userResponse.getStatusCode().equals(HttpStatus.OK) && userResponse.hasBody()){
+            UserDto user = userResponse.getBody();
+
+            if(user!=null && user.getRole().equals("ADMIN")){
+                return product;
+            }
+        }
+
+        return null;
     }
 }

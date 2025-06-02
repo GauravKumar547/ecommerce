@@ -1,6 +1,7 @@
-package com.ecommerce.productcatalogservice.utils.response;
+package org.ecommerce.orderservice.utils.response;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,5 +23,4 @@ public class ApiResponse<T> {
     public static <V> ResponseEntity<ApiResponse<V>> getResponseEntity(ApiResponse<V> apiResponse) {
         return ResponseEntity.status(apiResponse.getStatus()).body(apiResponse);
     }
-
-}
+} 

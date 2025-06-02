@@ -7,9 +7,14 @@ import com.ecommerce.productcatalogservice.mappers.ImageMapper;
 import com.ecommerce.productcatalogservice.mappers.ProductMapper;
 import com.ecommerce.productcatalogservice.models.Product;
 import com.ecommerce.productcatalogservice.services.IProductService;
-import com.ecommerce.productcatalogservice.utils.response.ApiResponse;
+import com.ecommerce.commons.utils.response.ApiResponse;
+import com.ecommerce.commons.exceptions.ResourceNotFoundException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +23,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/products")
+@RequestMapping("/api/v1/products")
+@Tag(name = "Product Management", description = "APIs for managing products")
 public class ProductControllerImpl implements ProductController {
     private final IProductService productService;
 
@@ -27,143 +33,94 @@ public class ProductControllerImpl implements ProductController {
         this.productService = productService;
     }
 
-
-    @Override
     @PostMapping
-    public ResponseEntity<ApiResponse<ProductDTO>> addProduct(@RequestBody ProductDTO product) {
-        if(product == null) {
-           throw new IllegalArgumentException("Product cannot be null");
-        }else if(product.getCategory() == null) {
-            throw new IllegalArgumentException("Category cannot be null");
-        }
-        Product productResponse = productService.createProduct(ProductMapper.toProduct(product));
-        ApiResponse<ProductDTO> apiResponse = new ApiResponse<>();
-        apiResponse.setStatus(HttpStatus.CREATED).setData(ProductMapper.toProductDTO(productResponse));
-        return ApiResponse.getResponseEntity(apiResponse);
+    @Operation(summary = "Add product", description = "Add a new product")
+    @Override
+    public ResponseEntity<ApiResponse<ProductDTO>> addProduct(@RequestBody ProductDTO productDTO) {
+        Product product = ProductMapper.toProduct(productDTO);
+        Product savedProduct = productService.createProduct(product);
+        return ApiResponse.created(ProductMapper.toProductDTO(savedProduct));
     }
 
-    @Override
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete product", description = "Delete a product by ID")
+    @Override
     public ResponseEntity<ApiResponse<ResponseDTO>> deleteProduct(@PathVariable long id) {
-        if(id<1){
-            throw new IllegalArgumentException("Product id must be greater than 0");
+        if (productService.deleteProductByID(id)) {
+            ResponseDTO responseDTO = new ResponseDTO();
+            responseDTO.setMessage("Product deleted successfully");
+            return ApiResponse.ok(responseDTO);
         }
-        ResponseDTO responseDTO = new ResponseDTO();
-        ApiResponse<ResponseDTO> apiResponse = new ApiResponse<>();
-        if(productService.deleteProductByID(id)){
-            apiResponse.setData(responseDTO.setMessage("Delete product successful")).setStatus(HttpStatus.OK);
-        }else{
-            apiResponse.setData(responseDTO.setMessage("Delete product failed")).setStatus(HttpStatus.NOT_FOUND);
-        }
-
-        return ApiResponse.getResponseEntity(apiResponse);
+        throw new ResourceNotFoundException("Product", "id", id);
     }
 
-    @Override
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<ProductDTO>> replaceProduct(@PathVariable long id, @RequestBody ProductDTO product) {
-        if(id<1){
-            throw new IllegalArgumentException("Product id must be greater than 0");
-        } else if(product==null){
-            throw new IllegalArgumentException("Product cannot be null");
+    @Operation(summary = "Replace product", description = "Replace a product by ID")
+    @Override
+    public ResponseEntity<ApiResponse<ProductDTO>> replaceProduct(@PathVariable long id, @RequestBody ProductDTO productDTO) {
+        Product product = ProductMapper.toProduct(productDTO);
+        Product updatedProduct = productService.replaceProductByID(id, product);
+        if (updatedProduct != null) {
+            return ApiResponse.ok(ProductMapper.toProductDTO(updatedProduct));
         }
-        Product productResponse = productService.replaceProductByID(id,ProductMapper.toProduct(product));
-        ApiResponse<ProductDTO> apiResponse = new ApiResponse<>();
-        if(productResponse!=null){
-            apiResponse.setData(ProductMapper.toProductDTO(productResponse)).setStatus(HttpStatus.OK);
-        }else{
-            apiResponse.setError("Replace product not successful").setStatus(HttpStatus.NOT_FOUND);
-        }
-        return  ApiResponse.getResponseEntity(apiResponse);
+        throw new ResourceNotFoundException("Product", "id", id);
     }
 
-    @Override
     @GetMapping("/{id}")
+    @Operation(summary = "Get product", description = "Get a product by ID")
+    @Override
     public ResponseEntity<ApiResponse<ProductDTO>> getProduct(@PathVariable long id) {
-        if(id<1){
-            throw new IllegalArgumentException("Product id must be greater than 0");
-        }
         Product product = productService.getProductByID(id);
-        ApiResponse<ProductDTO> apiResponse = new ApiResponse<>();
-        if (product == null) {
-            apiResponse.setError("Product not found").setStatus(HttpStatus.NOT_FOUND);
-        }else{
-            apiResponse.setData(ProductMapper.toProductDTO(product)).setStatus(HttpStatus.OK);
+        if (product != null) {
+            return ApiResponse.ok(ProductMapper.toProductDTO(product));
         }
-        return ApiResponse.getResponseEntity(apiResponse);
+        throw new ResourceNotFoundException("Product", "id", id);
     }
 
-    @Override
     @GetMapping
+    @Operation(summary = "Get all products", description = "Get all active products")
+    @Override
     public ResponseEntity<ApiResponse<List<ProductDTO>>> getAllProducts() {
-        ApiResponse<List<ProductDTO>> apiResponse = new ApiResponse<>();
         List<Product> products = productService.getAllProducts();
-        List<ProductDTO> productDTOList = products.stream().map(ProductMapper::toProductDTO).toList();
-        apiResponse.setData(productDTOList).setStatus(HttpStatus.OK);
-        return ApiResponse.getResponseEntity(apiResponse);
+        List<ProductDTO> productDTOs = products.stream()
+                .map(ProductMapper::toProductDTO)
+                .collect(Collectors.toList());
+        return ApiResponse.ok(productDTOs);
     }
 
+    @GetMapping("/category/{categoryName}")
+    @Operation(summary = "Get products by category", description = "Get all products in a category")
     @Override
-    @GetMapping("category/{categoryName}")
     public ResponseEntity<ApiResponse<List<ProductDTO>>> getProductsByCategory(@PathVariable String categoryName) {
-        if(categoryName.trim().isEmpty()){
-            throw new IllegalArgumentException("Category name cannot be empty");
-        }
-        ApiResponse<List<ProductDTO>> apiResponse = new ApiResponse<>();
-        List<Product> products = productService.getAllProducts();
-        List<ProductDTO> productDTOList = products.stream().filter(product -> product.getCategory()!=null&&product.getCategory().getName().equals(categoryName)).map(ProductMapper::toProductDTO).toList();
-        apiResponse.setData(productDTOList).setStatus(HttpStatus.OK);
-        return ApiResponse.getResponseEntity(apiResponse);
+        List<Product> products = productService.getAllProducts().stream()
+                .filter(product -> product.getCategory().getName().equals(categoryName))
+                .collect(Collectors.toList());
+        List<ProductDTO> productDTOs = products.stream()
+                .map(ProductMapper::toProductDTO)
+                .collect(Collectors.toList());
+        return ApiResponse.ok(productDTOs);
     }
 
-    @Override
     @PatchMapping("/{id}")
-    public ResponseEntity<ApiResponse<ProductDTO>> updateProduct(@PathVariable long id, @RequestBody ProductDTO product) {
-        if(id<1){
-            throw new IllegalArgumentException("Product id must be greater than 0");
-        } else if(product==null){
-            throw new IllegalArgumentException("Updating data of product cannot be null");
+    @Operation(summary = "Update product", description = "Partially update a product")
+    @Override
+    public ResponseEntity<ApiResponse<ProductDTO>> updateProduct(@PathVariable long id, @RequestBody ProductDTO productDTO) {
+        Product product = ProductMapper.toProduct(productDTO);
+        Product updatedProduct = productService.replaceProductByID(id, product);
+        if (updatedProduct != null) {
+            return ApiResponse.ok(ProductMapper.toProductDTO(updatedProduct));
         }
-        Product product1 = productService.getProductByID(id);
-        if (product1 == null) {
-            throw new IllegalArgumentException("Product with given id not found");
-        }
-        if(product.getName()!=null) {
-            product1.setName(product.getName());
-        }
-        if(product.getPrice()>0) {
-            product1.setPrice(product.getPrice());
-        }
-        if(product.getDescription()!=null) {
-            product1.setDescription(product.getDescription());
-        }
-        if(product.getImages()!=null&&!product.getImages().isEmpty()) {
-            product1.setImages(product.getImages().stream().map(ImageMapper::
-            toImage).collect(Collectors.toList()));
-        }
-        ProductDTO productDTO = ProductMapper.toProductDTO(productService.replaceProductByID(id, product1));
-        ApiResponse<ProductDTO> apiResponse = new ApiResponse<>();
-        apiResponse.setData(productDTO).setStatus(HttpStatus.OK);
-
-        return  ApiResponse.getResponseEntity(apiResponse);
+        throw new ResourceNotFoundException("Product", "id", id);
     }
 
+    @GetMapping("/{productId}/user/{userId}")
+    @Operation(summary = "Get product by user scope", description = "Get a product considering user's permissions")
     @Override
-    @GetMapping("/productId/user/{userId}")
     public ResponseEntity<ApiResponse<ProductDTO>> getProductByUserScope(@PathVariable Long productId, @PathVariable Long userId) {
-        if(productId == null || userId == null) {
-            throw new IllegalArgumentException("Product id and User id cannot be null");
-        }
-        if(productId<1 || userId<1) {
-            throw new IllegalArgumentException("Product id and User id must be greater than 0");
-        }
-        ApiResponse<ProductDTO> apiResponse = new ApiResponse<>();
         Product product = productService.getProductByUserScope(productId, userId);
-        if (product == null) {
-            apiResponse.setError("User not authorized to access").setStatus(HttpStatus.UNAUTHORIZED);
-            return ApiResponse.getResponseEntity(apiResponse);
+        if (product != null) {
+            return ApiResponse.ok(ProductMapper.toProductDTO(product));
         }
-        apiResponse.setData(ProductMapper.toProductDTO(product)).setStatus(HttpStatus.OK);
-        return ApiResponse.getResponseEntity(apiResponse);
+        throw new ResourceNotFoundException("Product", "id", productId);
     }
 }

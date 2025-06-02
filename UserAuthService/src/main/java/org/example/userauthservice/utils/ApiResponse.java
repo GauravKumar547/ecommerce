@@ -5,11 +5,9 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.MultiValueMap;
 
-
-@Setter
 @Getter
+@Setter
 @Accessors(chain = true)
 public class ApiResponse<T> {
     private HttpStatus status;
@@ -21,12 +19,8 @@ public class ApiResponse<T> {
         this.data = null;
         this.error = null;
     }
-    public static <V> ResponseEntity<ApiResponse<V>> getResponseEntity(ApiResponse<V> response, MultiValueMap<String, String> headers) {
 
-        return new ResponseEntity<>(response, headers, response.getStatus());
-    }
-    public static <V> ResponseEntity<ApiResponse<V>> getResponseEntity(ApiResponse<V> response) {
-
-        return ResponseEntity.status(response.getStatus()).body(response);
+    public static <V> ResponseEntity<ApiResponse<V>> getResponseEntity(ApiResponse<V> apiResponse) {
+        return ResponseEntity.status(apiResponse.getStatus()).body(apiResponse);
     }
 }

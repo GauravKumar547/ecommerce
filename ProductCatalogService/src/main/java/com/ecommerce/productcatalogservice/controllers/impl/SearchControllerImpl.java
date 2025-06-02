@@ -4,7 +4,7 @@ import com.ecommerce.productcatalogservice.controllers.SearchController;
 import com.ecommerce.productcatalogservice.dtos.SearchRequestDTO;
 import com.ecommerce.productcatalogservice.models.Product;
 import com.ecommerce.productcatalogservice.services.impl.SearchService;
-import com.ecommerce.productcatalogservice.utils.response.ApiResponse;
+import com.ecommerce.commons.utils.response.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -27,15 +27,14 @@ public class SearchControllerImpl implements SearchController {
     @PostMapping("/products")
     @Override
     public ResponseEntity<ApiResponse<Page<Product>>> searchProducts(@RequestBody SearchRequestDTO searchRequestDTO) {
-        ApiResponse<Page<Product>> apiResponse = new ApiResponse<>();
         Page<Product> products = searchService.searchProducts(
                 searchRequestDTO.getParamValue(),
                 searchRequestDTO.getPageNumber(),
                 searchRequestDTO.getPageSize(),
                 searchRequestDTO.getSortParams()
         );
-        apiResponse.setData(products).setStatus(products.isEmpty() ? HttpStatus.NOT_FOUND : HttpStatus.OK);
-
-        return ApiResponse.getResponseEntity(apiResponse);
+        return products.isEmpty() ? 
+            ApiResponse.error(HttpStatus.NOT_FOUND, "No products found matching the search criteria") :
+            ApiResponse.ok(products);
     }
 }

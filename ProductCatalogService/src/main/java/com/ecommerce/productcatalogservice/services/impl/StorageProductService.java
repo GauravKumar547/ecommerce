@@ -8,6 +8,9 @@ import com.ecommerce.productcatalogservice.models.State;
 import com.ecommerce.productcatalogservice.repos.CategoryRepository;
 import com.ecommerce.productcatalogservice.repos.ProductRepository;
 import com.ecommerce.productcatalogservice.services.IProductService;
+import com.ecommerce.commons.exceptions.ResourceNotFoundException;
+import com.ecommerce.commons.exceptions.BadRequestException;
+import com.ecommerce.commons.exceptions.UnauthorizedException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
@@ -23,7 +26,7 @@ import java.util.Optional;
 @Service("sqlProductService")
 public class StorageProductService implements IProductService {
     private final CategoryRepository categoryRepository;
-    ProductRepository productRepository;
+    private final ProductRepository productRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final RestTemplate restTemplate;
 
@@ -42,9 +45,10 @@ public class StorageProductService implements IProductService {
         if (cachedProduct != null) {
             return cachedProduct;
         }
-        Optional<Product> product  = productRepository.findById(productId);
-        product.ifPresent(value -> redisTemplate.opsForHash().put("products", productId, value));
-        return product.orElse(null);
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
+        redisTemplate.opsForHash().put("products", productId, product);
+        return product;
     }
 
     @Override
@@ -56,63 +60,60 @@ public class StorageProductService implements IProductService {
     @Override
     @Transactional
     public Product replaceProductByID(long productId, Product product) {
-        Optional<Product> oldProduct = productRepository.findById(productId);
-        Optional<Category> categoryOptional = categoryRepository.findById(product.getCategory().getId());
-        if(oldProduct.isPresent()){
-            product.setState(oldProduct.get().getState());
-            product.setId(productId);
-            categoryOptional.ifPresent(product::setCategory);
-            return productRepository.save(product);
-        }
-        return null;
+        Product existingProduct = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
+        
+        Category category = categoryRepository.findById(product.getCategory().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Category", "id", product.getCategory().getId()));
+
+        product.setState(existingProduct.getState());
+        product.setId(productId);
+        product.setCategory(category);
+        return productRepository.save(product);
     }
 
     @Override
     @Transactional
     public Boolean deleteProductByID(long productId) {
-        Optional<Product> oldProduct = productRepository.findById(productId);
-        if(oldProduct.isPresent()){
-            Product product = oldProduct.get();
-            product.setState(State.DELETED);
-            productRepository.save(product);
-            return true;
-        }
-        return false;
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
+        product.setState(State.DELETED);
+        productRepository.save(product);
+        return true;
     }
 
     @Override
     @Transactional
     public Product createProduct(Product product) {
-        if(product==null){
-            throw new IllegalArgumentException("Product cannot be null");
-        }else if(product.getId()>0 && productRepository.existsById(product.getId())){
-            throw new IllegalArgumentException("Product with given id already exists");
+        if (product == null) {
+            throw new BadRequestException("Product cannot be null");
         }
-        Optional<Category> categoryOptional = categoryRepository.findById(product.getCategory().getId());
-        categoryOptional.ifPresent(product::setCategory);
+        if (product.getId() > 0 && productRepository.existsById(product.getId())) {
+            throw new BadRequestException("Product with given id already exists");
+        }
+        Category category = categoryRepository.findById(product.getCategory().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Category", "id", product.getCategory().getId()));
+        product.setCategory(category);
         return productRepository.save(product);
     }
 
     @Override
     public Product getProductByUserScope(Long productId, Long userId) {
-        Optional<Product> productOptional = productRepository.findById(productId);
-        if(productOptional.isEmpty()){
-            throw new IllegalArgumentException("Product not found");
-        }
-        Product product = productOptional.get();
-        if(product.getStatus().equals(ProductStatus.LISTED)){
-            return  product;
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
+
+        if (product.getStatus().equals(ProductStatus.LISTED)) {
+            return product;
         }
 
         ResponseEntity<UserDto> userResponse = restTemplate.getForEntity("http://user-auth-service/users/{userId}", UserDto.class, userId);
-        if(userResponse.getStatusCode().equals(HttpStatus.OK) && userResponse.hasBody()){
+        if (userResponse.getStatusCode().equals(HttpStatus.OK) && userResponse.hasBody()) {
             UserDto user = userResponse.getBody();
-
-            if(user!=null && user.getRole().equals("ADMIN")){
+            if (user != null && user.getRole().equals("ADMIN")) {
                 return product;
             }
         }
 
-        return null;
+        throw new UnauthorizedException("User not authorized to access this product");
     }
 }

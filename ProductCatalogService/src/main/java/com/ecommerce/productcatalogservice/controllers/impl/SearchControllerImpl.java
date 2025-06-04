@@ -5,6 +5,7 @@ import com.ecommerce.productcatalogservice.dtos.SearchRequestDTO;
 import com.ecommerce.productcatalogservice.models.Product;
 import com.ecommerce.productcatalogservice.services.impl.SearchService;
 import com.ecommerce.commons.utils.response.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/search")
+@Tag(name = "Search", description = "APIs for searching products")
 public class SearchControllerImpl implements SearchController {
     private final SearchService searchService;
 

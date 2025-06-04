@@ -1,83 +1,32 @@
 package com.ecommerce.productcatalogservice.controllers;
 
 import com.ecommerce.productcatalogservice.models.Inventory;
-import com.ecommerce.productcatalogservice.services.InventoryService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RestController
-@RequestMapping("/api/v1/inventory")
-@Tag(name = "Inventory Management", description = "APIs for managing product inventory")
-public class InventoryController {
 
-    private final InventoryService inventoryService;
+public interface InventoryController {
 
-    public InventoryController(InventoryService inventoryService) {
-        this.inventoryService = inventoryService;
-    }
+    public ResponseEntity<Inventory> createInventory(@RequestBody Inventory inventory);
 
-    @PostMapping
-    @Operation(summary = "Create inventory", description = "Creates a new inventory record for a product")
-    public ResponseEntity<Inventory> createInventory(@RequestBody Inventory inventory) {
-        return ResponseEntity.ok(inventoryService.createInventory(inventory));
-    }
+    public ResponseEntity<Inventory> updateInventory(@PathVariable Long id, @RequestBody Inventory inventory);
 
-    @PutMapping("/{id}")
-    @Operation(summary = "Update inventory", description = "Updates an existing inventory record")
-    public ResponseEntity<Inventory> updateInventory(@PathVariable Long id, @RequestBody Inventory inventory) {
-        return ResponseEntity.ok(inventoryService.updateInventory(id, inventory));
-    }
+    public ResponseEntity<Void> deleteInventory(@PathVariable Long id) ;
 
-    @DeleteMapping("/{id}")
-    @Operation(summary = "Delete inventory", description = "Deletes an inventory record")
-    public ResponseEntity<Void> deleteInventory(@PathVariable Long id) {
-        inventoryService.deleteInventory(id);
-        return ResponseEntity.ok().build();
-    }
+    public ResponseEntity<Inventory> getInventory(@PathVariable Long id) ;
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Get inventory by ID", description = "Retrieves an inventory record by its ID")
-    public ResponseEntity<Inventory> getInventory(@PathVariable Long id) {
-        return ResponseEntity.ok(inventoryService.getInventoryById(id));
-    }
+    public ResponseEntity<List<Inventory>> getAllInventory() ;
 
-    @GetMapping
-    @Operation(summary = "Get all inventory", description = "Retrieves all inventory records")
-    public ResponseEntity<List<Inventory>> getAllInventory() {
-        return ResponseEntity.ok(inventoryService.getAllInventory());
-    }
+    public ResponseEntity<List<Inventory>> getLowStockItems() ;
 
-    @GetMapping("/low-stock")
-    @Operation(summary = "Get low stock items", description = "Retrieves all items with low stock")
-    public ResponseEntity<List<Inventory>> getLowStockItems() {
-        return ResponseEntity.ok(inventoryService.getLowStockItems());
-    }
+    public ResponseEntity<List<Inventory>> getItemsNeedingRestock() ;
 
-    @GetMapping("/needs-restock")
-    @Operation(summary = "Get items needing restock", description = "Retrieves all items that need restocking")
-    public ResponseEntity<List<Inventory>> getItemsNeedingRestock() {
-        return ResponseEntity.ok(inventoryService.getItemsNeedingRestock());
-    }
+    public ResponseEntity<Boolean> reserveStock(@PathVariable Long productId, @PathVariable Integer quantity) ;
 
-    @PostMapping("/{productId}/reserve/{quantity}")
-    @Operation(summary = "Reserve stock", description = "Reserves a specific quantity of a product")
-    public ResponseEntity<Boolean> reserveStock(@PathVariable Long productId, @PathVariable Integer quantity) {
-        return ResponseEntity.ok(inventoryService.reserveStock(productId, quantity));
-    }
+    public ResponseEntity<Boolean> releaseStock(@PathVariable Long productId, @PathVariable Integer quantity) ;
 
-    @PostMapping("/{productId}/release/{quantity}")
-    @Operation(summary = "Release stock", description = "Releases a previously reserved quantity of a product")
-    public ResponseEntity<Boolean> releaseStock(@PathVariable Long productId, @PathVariable Integer quantity) {
-        return ResponseEntity.ok(inventoryService.releaseStock(productId, quantity));
-    }
-
-    @PostMapping("/{productId}/confirm/{quantity}")
-    @Operation(summary = "Confirm stock reservation", description = "Confirms a stock reservation and updates the inventory")
-    public ResponseEntity<Boolean> confirmStockReservation(@PathVariable Long productId, @PathVariable Integer quantity) {
-        return ResponseEntity.ok(inventoryService.confirmStockReservation(productId, quantity));
-    }
+    public ResponseEntity<Boolean> confirmStockReservation(@PathVariable Long productId, @PathVariable Integer quantity);
 } 

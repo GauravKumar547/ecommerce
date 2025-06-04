@@ -9,6 +9,7 @@ import com.ecommerce.productcatalogservice.services.IProductService;
 import com.ecommerce.commons.utils.response.ApiResponse;
 import com.ecommerce.commons.exceptions.ResourceNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/v1/products")
 @Tag(name = "Product Management", description = "APIs for managing products")
+@SecurityRequirement(name = "JWT")
 public class ProductControllerImpl implements ProductController {
     private final IProductService productService;
 
@@ -30,7 +32,10 @@ public class ProductControllerImpl implements ProductController {
     }
 
     @PostMapping
-    @Operation(summary = "Add product", description = "Add a new product")
+    @Operation(
+        summary = "Add product", 
+        description = "Add a new product. Requires authentication with ADMIN role."
+    )
     @Override
     public ResponseEntity<ApiResponse<ProductDTO>> addProduct(@RequestBody ProductDTO productDTO) {
         Product product = ProductMapper.toProduct(productDTO);
@@ -39,7 +44,10 @@ public class ProductControllerImpl implements ProductController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete product", description = "Delete a product by ID")
+    @Operation(
+        summary = "Delete product", 
+        description = "Delete a product by ID. Requires authentication with ADMIN role."
+    )
     @Override
     public ResponseEntity<ApiResponse<ResponseDTO>> deleteProduct(@PathVariable long id) {
         if (productService.deleteProductByID(id)) {
@@ -51,7 +59,10 @@ public class ProductControllerImpl implements ProductController {
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Replace product", description = "Replace a product by ID")
+    @Operation(
+        summary = "Replace product", 
+        description = "Replace a product by ID. Requires authentication with ADMIN role."
+    )
     @Override
     public ResponseEntity<ApiResponse<ProductDTO>> replaceProduct(@PathVariable long id, @RequestBody ProductDTO productDTO) {
         Product product = ProductMapper.toProduct(productDTO);
@@ -63,7 +74,10 @@ public class ProductControllerImpl implements ProductController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get product", description = "Get a product by ID")
+    @Operation(
+        summary = "Get product by ID", 
+        description = "Get a product by its ID. Requires authentication."
+    )
     @Override
     public ResponseEntity<ApiResponse<ProductDTO>> getProduct(@PathVariable long id) {
         Product product = productService.getProductByID(id);
@@ -74,7 +88,10 @@ public class ProductControllerImpl implements ProductController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all products", description = "Get all active products")
+    @Operation(
+        summary = "Get all products", 
+        description = "Get all products. Requires authentication."
+    )
     @Override
     public ResponseEntity<ApiResponse<List<ProductDTO>>> getAllProducts() {
         List<Product> products = productService.getAllProducts();
@@ -85,7 +102,10 @@ public class ProductControllerImpl implements ProductController {
     }
 
     @GetMapping("/category/{categoryName}")
-    @Operation(summary = "Get products by category", description = "Get all products in a category")
+    @Operation(
+        summary = "Get products by category", 
+        description = "Get all products in a category. Requires authentication."
+    )
     @Override
     public ResponseEntity<ApiResponse<List<ProductDTO>>> getProductsByCategory(@PathVariable String categoryName) {
         List<Product> products = productService.getAllProducts().stream()
@@ -98,7 +118,10 @@ public class ProductControllerImpl implements ProductController {
     }
 
     @PatchMapping("/{id}")
-    @Operation(summary = "Update product", description = "Partially update a product")
+    @Operation(
+        summary = "Update product", 
+        description = "Partially update a product. Requires authentication with ADMIN role."
+    )
     @Override
     public ResponseEntity<ApiResponse<ProductDTO>> updateProduct(@PathVariable long id, @RequestBody ProductDTO productDTO) {
         Product product = ProductMapper.toProduct(productDTO);
@@ -110,7 +133,10 @@ public class ProductControllerImpl implements ProductController {
     }
 
     @GetMapping("/{productId}/user/{userId}")
-    @Operation(summary = "Get product by user scope", description = "Get a product considering user's permissions")
+    @Operation(
+        summary = "Get product by user scope", 
+        description = "Get a product considering user's permissions. Requires authentication."
+    )
     @Override
     public ResponseEntity<ApiResponse<ProductDTO>> getProductByUserScope(@PathVariable Long productId, @PathVariable Long userId) {
         Product product = productService.getProductByUserScope(productId, userId);

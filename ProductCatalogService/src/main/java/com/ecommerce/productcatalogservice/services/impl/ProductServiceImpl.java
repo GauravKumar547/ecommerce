@@ -68,7 +68,8 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Cacheable(value = "products", key = "'category:' + #categoryId")
     public List<Product> getProductsByCategory(Long categoryId) {
-        return productRepository.findByCategoryId(categoryId);
+
+        return productRepository.findAllByCategory_Id(categoryId);
     }
 
     @Override
@@ -102,7 +103,7 @@ public class ProductServiceImpl implements ProductService {
 
         for (Product product : products) {
             try {
-                if (product.getId() == null) {
+                if (product.getId() == 0) {
                     throw new IllegalArgumentException("Product ID cannot be null for update operation");
                 }
                 Product existingProduct = getProductById(product.getId());
@@ -116,7 +117,7 @@ public class ProductServiceImpl implements ProductService {
                 response.setSuccessCount(response.getSuccessCount() + 1);
             } catch (Exception e) {
                 BulkOperationResponse.FailureItem failureItem = new BulkOperationResponse.FailureItem();
-                failureItem.setId(product.getId().toString());
+                failureItem.setId(String.valueOf(product.getId()));
                 failureItem.setReason(e.getMessage());
                 response.getFailureItems().add(failureItem);
                 response.setFailureCount(response.getFailureCount() + 1);

@@ -3,7 +3,6 @@ package com.ecommerce.productcatalogservice.controllers.impl;
 import com.ecommerce.productcatalogservice.controllers.ProductController;
 import com.ecommerce.productcatalogservice.dtos.ProductDTO;
 import com.ecommerce.productcatalogservice.dtos.ResponseDTO;
-import com.ecommerce.productcatalogservice.mappers.ImageMapper;
 import com.ecommerce.productcatalogservice.mappers.ProductMapper;
 import com.ecommerce.productcatalogservice.models.Product;
 import com.ecommerce.productcatalogservice.services.IProductService;
@@ -13,9 +12,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

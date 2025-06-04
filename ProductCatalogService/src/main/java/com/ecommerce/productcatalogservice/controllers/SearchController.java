@@ -3,7 +3,7 @@ package com.ecommerce.productcatalogservice.controllers;
 
 import com.ecommerce.productcatalogservice.dtos.SearchRequestDTO;
 import com.ecommerce.productcatalogservice.models.Product;
-import com.ecommerce.productcatalogservice.utils.response.ApiResponse;
+import com.ecommerce.commons.utils.response.ApiResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 

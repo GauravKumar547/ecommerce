@@ -6,7 +6,7 @@ import com.ecommerce.productcatalogservice.dtos.ResponseDTO;
 import com.ecommerce.productcatalogservice.mappers.CategoryMapper;
 import com.ecommerce.productcatalogservice.models.Category;
 import com.ecommerce.productcatalogservice.services.impl.CategoryService;
-import com.ecommerce.productcatalogservice.utils.response.ApiResponse;
+import com.ecommerce.commons.utils.response.ApiResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

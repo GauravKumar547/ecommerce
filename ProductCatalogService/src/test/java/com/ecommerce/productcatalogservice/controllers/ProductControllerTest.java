@@ -7,7 +7,7 @@ import com.ecommerce.productcatalogservice.mappers.ProductMapper;
 import com.ecommerce.productcatalogservice.models.Category;
 import com.ecommerce.productcatalogservice.models.Product;
 import com.ecommerce.productcatalogservice.services.IProductService;
-import com.ecommerce.productcatalogservice.utils.response.ApiResponse;
+import com.ecommerce.commons.utils.response.ApiResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;

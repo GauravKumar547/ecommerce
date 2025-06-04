@@ -34,12 +34,12 @@ public class ProductRepositoryTest {
     }
 
     @Test
-    public void TestFindAllByCategoryName_RunsSuccessfully() {
+    public void TestFindAllByCategoryID_RunsSuccessfully() {
         //  Arrange
         Category category = Category.builder().id(1L).name("Men's fashion").build();
         // Act
         List<Product> products = productRepository.findAll();
-        List<Product> categoryProducts = productRepository.findAllByCategory(category);
+        List<Product> categoryProducts = productRepository.findAllByCategory_Id(1L);
 
         // Assert
         assertEquals(products.stream().filter(product -> category.getId() == product.getCategory().getId()).toList().size(),

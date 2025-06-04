@@ -2,7 +2,7 @@ package com.ecommerce.productcatalogservice.controllers;
 
 import com.ecommerce.productcatalogservice.dtos.CategoryDTO;
 import com.ecommerce.productcatalogservice.dtos.ResponseDTO;
-import com.ecommerce.productcatalogservice.utils.response.ApiResponse;
+import com.ecommerce.commons.utils.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;

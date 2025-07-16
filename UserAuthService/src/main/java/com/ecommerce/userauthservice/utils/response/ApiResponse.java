@@ -1,4 +1,4 @@
-package org.ecommerce.paymentservice.utils.response;
+package com.ecommerce.userauthservice.utils.response;
 
 import lombok.Getter;
 import lombok.Setter;
